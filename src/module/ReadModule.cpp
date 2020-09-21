@@ -49,7 +49,6 @@ void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
 
     while (size--) {
         CpInfo cpInfo;
-        pool.push_back(cpInfo);
         cpInfo.tag = u1Read(file);
         i = 0;
 
@@ -80,6 +79,7 @@ void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
         while (i--) {
             cpInfo.info.push_back(u1Read(file));
         }
+        pool.push_back(cpInfo);
     }
 }
 

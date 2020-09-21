@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include "CpInfo.h"
 #include "FieldInfo.h"
@@ -29,6 +30,9 @@ class ClassFile {
         std::vector<AttributeInfo> attributes;
 
         ClassFile();
+
+        std::string get_string_constant_pool(uint16_t);
+        std::string get_string_constant_pool(uint16_t, uint8_t);
 };
 
 #endif // CLASS_FILE_H
