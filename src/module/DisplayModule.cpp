@@ -1,6 +1,8 @@
 #include "DisplayModule.h"
+#include "../model/MethodInfo.h"
 #include "../model/ClassFile.h"
 #include "../constants/AccessFlagsClassConst.h"
+#include "../constants/AccessFlagsMethodConst.h"
 #include "../constants/CpTagConst.h"
 #include <stdio.h>
 #include <cstdint>
@@ -16,6 +18,23 @@ std::string access_flags(uint16_t flags) {
     if (flags & AccessFlagsClassConst::ACC_SYNTHETIC) s.append("synthetic ");
     if (flags & AccessFlagsClassConst::ACC_ANNOTATION) s.append("annotation ");
     if (flags & AccessFlagsClassConst::ACC_ENUM) s.append("anum ");
+    return s;
+}
+
+std::string access_flags_methods(uint16_t flags) {
+    std::string s;
+    if (flags & AccessFlagsMethodConst::ACC_PUBLIC) s.append("public ");
+    if (flags & AccessFlagsMethodConst::ACC_PRIVATE) s.append("private ");
+    if (flags & AccessFlagsMethodConst::ACC_PROTECTED) s.append("protected ");
+    if (flags & AccessFlagsMethodConst::ACC_STATIC) s.append("static ");
+    if (flags & AccessFlagsMethodConst::ACC_FINAL) s.append("final ");
+    if (flags & AccessFlagsMethodConst::ACC_SYNCHRONIZED) s.append("synchronized ");
+    if (flags & AccessFlagsMethodConst::ACC_BRIDGE) s.append("bridge ");
+    if (flags & AccessFlagsMethodConst::ACC_VARARGS) s.append("varargs ");
+    if (flags & AccessFlagsMethodConst::ACC_NATIVE) s.append("native ");
+    if (flags & AccessFlagsMethodConst::ACC_ABSTRACT) s.append("abstract ");
+    if (flags & AccessFlagsMethodConst::ACC_STRICT) s.append("strict ");
+    if (flags & AccessFlagsMethodConst::ACC_SYNTHETIC) s.append("synthetic ");
     return s;
 }
 
@@ -61,6 +80,16 @@ void show_constant_pool(ClassFile& classFile) {
     }
 }
 
+void show_methods(ClassFile& classFile) {
+    printf("\nMethods:\n\n");
+    for (MethodInfo methodInfo : classFile.methods) {
+        printf("\tName:\t\t\tcp_info#%d\t\t<%s>\n", methodInfo.name_index, classFile.get_string_constant_pool(methodInfo.name_index).c_str());
+        printf("\tDescriptor:\t\tcp_info#%d\t\t<%s>\n", methodInfo.descriptor_index, classFile.get_string_constant_pool(methodInfo.descriptor_index).c_str());
+        printf("\tAccess Flags:\t\t0x%04x\t\t\t[ %s]\n", methodInfo.access_flags, access_flags_methods(methodInfo.access_flags).c_str());
+        printf("\n");
+    }
+}
+
 void DisplayModule::show(ClassFile& classFile) {
     printf("Magic Number: 0x%08x\n", classFile.magic);
     printf("Minor Version: %d\n", classFile.minor_version);
@@ -74,4 +103,5 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Methods Count: %d\n", classFile.methods_count);
     printf("Attributes Count: %d\n", classFile.attributes_count);
     show_constant_pool(classFile);
+    show_methods(classFile);
 }
