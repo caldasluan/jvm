@@ -1,6 +1,7 @@
 #include "DisplayModule.h"
 #include "../model/ClassFile.h"
 #include "../constants/AccessFlagsClassConst.h"
+#include "../constants/CpTagConst.h"
 #include <stdio.h>
 #include <cstdint>
 #include <string>
@@ -18,6 +19,48 @@ std::string access_flags(uint16_t flags) {
     return s;
 }
 
+void show_constant_pool(ClassFile& classFile) {
+    int i = 1;
+    printf("Constant pool:\n");
+    for (std::vector<CpInfo>::iterator it = classFile.constant_pool.begin() ; it != classFile.constant_pool.end(); ++it) {
+        switch (it->tag) {
+            case CpTagConst::CONSTANT_Class:
+                printf("\t#%2d = Class     \t\t #%d \t\t         // %s\n", i, it->get_name_index(), classFile.get_string_constant_pool(i).c_str());
+                break;
+            case CpTagConst::CONSTANT_Fieldref:
+                printf("\t#%2d = Fieldref  \t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                break;
+            case CpTagConst::CONSTANT_Methodref:
+                printf("\t#%2d = Methodref \t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                break;
+            case CpTagConst::CONSTANT_InterfaceMethodref:
+                printf("\t#%2d = InterfaceMethodref \t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                break;
+            case CpTagConst::CONSTANT_String:
+                printf("\t#%2d = String    \t\t #%d \t\t         // %s\n", i, it->get_string_index(), classFile.get_string_constant_pool(i).c_str());
+                break;
+            /*case CpTagConst::CONSTANT_Integer:
+                printf("\t#%2d = Integer    \t\t %d\n", i, it->get_bytes());
+                break;
+            case CpTagConst::CONSTANT_Float:
+                printf("\t#%2d = Float    \t\t %.2f\n", i, it->get_bytes());
+                break;*/
+            case CpTagConst::CONSTANT_Long:
+                break;
+            case CpTagConst::CONSTANT_Double:
+                break;
+            case CpTagConst::CONSTANT_NameAndType:
+                printf("\t#%2d = NameAndType \t\t #%d:#%d \t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
+                break;
+            case CpTagConst::CONSTANT_Utf8:
+                printf("\t#%2d = Utf8    \t\t\t %s\n", i, classFile.get_string_constant_pool(i).c_str());
+            default:
+                break;
+        }
+        i++;
+    }
+}
+
 void DisplayModule::show(ClassFile& classFile) {
     printf("Magic Number: 0x%08x\n", classFile.magic);
     printf("Minor Version: %d\n", classFile.minor_version);
@@ -30,5 +73,5 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Fields Count: %d\n", classFile.fields_count);
     printf("Methods Count: %d\n", classFile.methods_count);
     printf("Attributes Count: %d\n", classFile.attributes_count);
-    classFile.show_constant_pool();
+    show_constant_pool(classFile);
 }
