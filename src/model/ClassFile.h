@@ -33,6 +33,7 @@ class ClassFile {
 
         std::string get_string_constant_pool(uint16_t);
         std::string get_string_constant_pool(uint16_t, uint8_t);
+        void show_constant_pool();
 };
 
 #endif // CLASS_FILE_H

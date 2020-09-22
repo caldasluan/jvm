@@ -30,4 +30,5 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Fields Count: %d\n", classFile.fields_count);
     printf("Methods Count: %d\n", classFile.methods_count);
     printf("Attributes Count: %d\n", classFile.attributes_count);
+    classFile.show_constant_pool();
 }
