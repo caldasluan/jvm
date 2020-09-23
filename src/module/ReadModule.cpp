@@ -52,14 +52,19 @@ void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
         cpInfo.tag = u1Read(file);
         i = 0;
 
-        if (cpInfo.tag == CpTagConst::CONSTANT_Class || cpInfo.tag == CpTagConst::CONSTANT_String) {
+        if (cpInfo.tag == CpTagConst::CONSTANT_Class ||
+                cpInfo.tag == CpTagConst::CONSTANT_String ||
+                cpInfo.tag == CpTagConst::CONSTANT_MethodType) {
             i = 2;
+        } else if (cpInfo.tag == CpTagConst::CONSTANT_MethodHandle) {
+            i = 3;
         } else if (cpInfo.tag == CpTagConst::CONSTANT_Fieldref || 
                 cpInfo.tag == CpTagConst::CONSTANT_NameAndType || 
                 cpInfo.tag == CpTagConst::CONSTANT_Methodref ||
                 cpInfo.tag == CpTagConst::CONSTANT_InterfaceMethodref ||
                 cpInfo.tag == CpTagConst::CONSTANT_Integer ||
-                cpInfo.tag == CpTagConst::CONSTANT_Float) {
+                cpInfo.tag == CpTagConst::CONSTANT_Float ||
+                cpInfo.tag == CpTagConst::CONSTANT_InvokeDynamic) {
             i = 4;
         } else if (cpInfo.tag == CpTagConst::CONSTANT_Utf8) {
             cpInfo.info.push_back(u1Read(file));

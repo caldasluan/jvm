@@ -16,6 +16,9 @@ class CpTagConst {
         static const uint8_t CONSTANT_Double = 6;
         static const uint8_t CONSTANT_NameAndType = 12;
         static const uint8_t CONSTANT_Utf8 = 1;
+        static const uint8_t CONSTANT_MethodHandle = 15;
+        static const uint8_t CONSTANT_MethodType = 16;
+        static const uint8_t CONSTANT_InvokeDynamic = 18;
 };
 
 #endif // CP_TAG_CONST_H
