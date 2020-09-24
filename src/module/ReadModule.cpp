@@ -21,14 +21,14 @@ uint32_t u4Read(FILE* file) {
     return (u2Read(file) << 16) + u2Read(file);
 }
 
-void fill_attributes_info(FILE* file, uint16_t size, std::vector<std::unique_ptr<AttributeInfo>>& attributes, ClassFile* classFile)
+void fill_attributes_info(FILE* file, uint16_t size, std::vector<std::shared_ptr<AttributeInfo>>& attributes, ClassFile* classFile)
 {
   attributes.clear();
   attributes.reserve(size);
 
-  for (int i = 0; i < (int)attributes.size(); i++)
+  while (size--)
   {
-    attributes[i] = std::unique_ptr<AttributeInfo>(getAttribute(file, classFile));
+    attributes.push_back(std::shared_ptr<AttributeInfo>(getAttribute(file, classFile)));
   }
 
 }

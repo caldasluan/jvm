@@ -8,8 +8,11 @@
 #include <algorithm>
 #include <memory>
 
-#include "ClassFile.h"
+class ClassFile;
+
 #include "CpInfo.h"
+
+#define OFFSET_AMMOUNT 8
 
 #define ATTRIBUTE_CODE 0
 #define ATTRIBUTE_SYNTHETIC 1
@@ -43,12 +46,15 @@ public:
         length(_length) {}
 
   virtual void fillAttribute(FILE* file, ClassFile* classFile) {}
-  virtual void showAttribute(int offset, int index, ClassFile* classFile) {}
+  virtual void showAttribute(int offset, int index, ClassFile& classFile);
 };
+
+#include "ClassFile.h"
+#include "../module/ReadModule.h"
 
 AttributeInfo *getAttribute(FILE* file, ClassFile* classFile);
 
-void showAttributes(int offset, std::vector<std::unique_ptr<AttributeInfo>> &attributes, ClassFile* classFile);
+void show_attributes(int offset, std::vector<std::shared_ptr<AttributeInfo>> &attributes, ClassFile& classFile);
 
 const std::array<std::string, 20> ATTRIBUTE_NAMES = {
     "Code",
