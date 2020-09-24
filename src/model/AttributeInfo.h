@@ -52,7 +52,7 @@ public:
 #include "ClassFile.h"
 #include "../module/ReadModule.h"
 
-AttributeInfo *getAttribute(FILE* file, ClassFile* classFile);
+std::shared_ptr<AttributeInfo> getAttribute(FILE* file, ClassFile* classFile);
 
 void show_attributes(int offset, std::vector<std::shared_ptr<AttributeInfo>> &attributes, ClassFile& classFile);
 

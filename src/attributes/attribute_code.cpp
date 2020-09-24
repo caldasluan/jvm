@@ -1,5 +1,12 @@
 #include "attribute_code.h"
 
+AttributeCode::~AttributeCode()
+{
+  delete[] code;
+  exceptions.clear();
+  attributes.clear();
+}
+
 inline void AttributeCode::fillAttribute(FILE *file, ClassFile* classFile)
 {
   max_stack = u2Read(file);
@@ -8,19 +15,23 @@ inline void AttributeCode::fillAttribute(FILE *file, ClassFile* classFile)
   code = new char[code_length];
   fread(code, code_length, 1, file);
   exceptions_length = u2Read(file);
-  exceptions = std::vector<exception>(exceptions_length);
+  exceptions.clear();
+  exceptions.reserve(exceptions_length);
   for (int i = 0; i < exceptions_length; i++)
   {
-    exceptions[i].start_pc = u2Read(file);
-    exceptions[i].end_pc = u2Read(file);
-    exceptions[i].handler_pc = u2Read(file);
-    exceptions[i].catch_type = u2Read(file);
+    exception e;
+    e.start_pc = u2Read(file);
+    e.end_pc = u2Read(file);
+    e.handler_pc = u2Read(file);
+    e.catch_type = u2Read(file);
+    exceptions.push_back(e);
   }
   attribute_count = u2Read(file);
-  attributes = std::vector<std::shared_ptr<AttributeInfo>>(attribute_count);
+  attributes.clear();
+  attributes.reserve(attribute_count);
   for (int i = 0; i < attribute_count; i++)
   {
-    attributes[i] = std::shared_ptr<AttributeInfo>(getAttribute(file, classFile));
+    attributes.push_back( std::move( std::shared_ptr<AttributeInfo>( getAttribute(file, classFile) ) ) );
   }
 }
 

@@ -28,9 +28,8 @@ void fill_attributes_info(FILE* file, uint16_t size, std::vector<std::shared_ptr
 
   while (size--)
   {
-    attributes.push_back(std::shared_ptr<AttributeInfo>(getAttribute(file, classFile)));
+    attributes.push_back(std::move(getAttribute(file, classFile)));
   }
-
 }
 
 void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
@@ -113,8 +112,8 @@ void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& method
     }
 }
 
-ClassFile& ReadModule::read_file(const char* file_name) {
-    ClassFile *classFile = (ClassFile*) malloc(sizeof(ClassFile));
+ClassFile* ReadModule::read_file(const char* file_name) {
+    ClassFile *classFile = new ClassFile;
     FILE* fp;
     fp = fopen(file_name, "r");
 
@@ -150,5 +149,5 @@ ClassFile& ReadModule::read_file(const char* file_name) {
 
     fclose(fp);
 
-    return *classFile;
+    return classFile;
 }

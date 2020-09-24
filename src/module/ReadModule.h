@@ -8,7 +8,7 @@
 
 class ReadModule {
     public:
-        static ClassFile& read_file(const char*);
+        static ClassFile* read_file(const char*);
 };
 
 uint8_t u1Read(FILE* file);

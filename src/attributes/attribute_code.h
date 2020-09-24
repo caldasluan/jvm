@@ -28,10 +28,7 @@ public:
   uint16_t attribute_count;
   std::vector<std::shared_ptr<AttributeInfo>> attributes;
 
-  ~AttributeCode()
-  {
-    delete[] code;
-  }
+  ~AttributeCode();
 
   inline void fillAttribute(FILE *file, ClassFile* classFile);
 

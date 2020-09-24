@@ -28,76 +28,76 @@
            length);
   }
 
-AttributeInfo *getAttribute(FILE* file, ClassFile* classFile)
+std::shared_ptr<AttributeInfo> getAttribute(FILE* file, ClassFile* classFile)
 {
-  AttributeInfo *attr;
+  std::shared_ptr<AttributeInfo> attr;
   uint16_t name_index = u2Read(file);
   uint32_t length = u4Read(file);
 
   switch (std::find(ATTRIBUTE_NAMES.begin(), ATTRIBUTE_NAMES.end(), classFile->get_string_constant_pool(name_index).c_str()) - ATTRIBUTE_NAMES.begin())
   {
    case ATTRIBUTE_CODE:
-    attr = new AttributeCode(name_index, length);
+    attr = std::make_shared<AttributeCode>(name_index, length);
     break;
   case ATTRIBUTE_SYNTHETIC:
-    attr = new AttributeSynthetic(name_index);
+    attr = std::make_shared<AttributeSynthetic>(name_index);
     break;
   case ATTRIBUTE_SIGNATURE:
-    attr = new AttributeSignature(name_index, length);
+    attr = std::make_shared<AttributeSignature>(name_index, length);
     break;
   case ATTRIBUTE_EXCEPTIONS:
-    attr = new AttributeExceptions(name_index, length);
+    attr = std::make_shared<AttributeExceptions>(name_index, length);
     break;
   case ATTRIBUTE_SOURCE_FILE:
-    attr = new AttributeSourceFile(name_index, length);
+    attr = std::make_shared<AttributeSourceFile>(name_index, length);
     break;
   case ATTRIBUTE_DEPRECATED:
-    attr = new AttributeDeprecated(name_index, length);
+    attr = std::make_shared<AttributeDeprecated>(name_index, length);
     break;
   case ATTRIBUTE_INNER_CLASSES:
-    attr = new AttributeInnerClasses(name_index, length);
+    attr = std::make_shared<AttributeInnerClasses>(name_index, length);
     break;
   case ATTRIBUTE_CONSTANT_VALUE:
-    attr = new AttributeConstantValue(name_index, length);
+    attr = std::make_shared<AttributeConstantValue>(name_index, length);
     break;
   case ATTRIBUTE_STACK_MAP_TABLE:
-    attr = new AttributeStackMapTable(name_index, length);
+    attr = std::make_shared<AttributeStackMapTable>(name_index, length);
     break;
   case ATTRIBUTE_ENCLOSING_METHOD:
-    attr = new AttributeEnclosingMethod(name_index, length);
+    attr = std::make_shared<AttributeEnclosingMethod>(name_index, length);
     break;
   case ATTRIBUTE_LINE_NUMBER_TABLE:
-    attr = new AttributeLineNumberTable(name_index, length);
+    attr = std::make_shared<AttributeLineNumberTable>(name_index, length);
     break;
   case ATTRIBUTE_BOOTSTRAP_METHODS:
-    attr = new AttributeBootstrapMethods(name_index, length);
+    attr = std::make_shared<AttributeBootstrapMethods>(name_index, length);
     break;
   case ATTRIBUTE_ANNOTATION_DEFAULT:
-    attr = new AttributeAnnotationDefault(name_index, length);
+    attr = std::make_shared<AttributeAnnotationDefault>(name_index, length);
     break;
   case ATTRIBUTE_LOCAL_VARIABLE_TABLE:
-    attr = new AttributeLocalVariableTable(name_index, length);
+    attr = std::make_shared<AttributeLocalVariableTable>(name_index, length);
     break;
   case ATTRIBUTE_SOURCE_DEBUG_EXTENSION:
-    attr = new AttributeSourceDebugExtension(name_index, length);
+    attr = std::make_shared<AttributeSourceDebugExtension>(name_index, length);
     break;
   case ATTRIBUTE_LOCAL_VARIABLE_TYPE_TABLE:
-    attr = new AttributeLocalVariableTypeTable(name_index, length);
+    attr = std::make_shared<AttributeLocalVariableTypeTable>(name_index, length);
     break;
   case ATTRIBUTE_RUNTIME_VISIBLE_ANNOTATIONS:
-    attr = new AttributeRuntimeAnnotations(name_index, length, true);
+    attr = std::make_shared<AttributeRuntimeAnnotations>(name_index, length, true);
     break;
   case ATTRIBUTE_RUNTIME_INVISIBLE_ANNOTATIONS:
-    attr = new AttributeRuntimeAnnotations(name_index, length, false);
+    attr = std::make_shared<AttributeRuntimeAnnotations>(name_index, length, false);
     break;
   case ATTRIBUTE_RUNTIME_VISIBLE_PARAMENTER_ANNOTATIONS:
-    attr = new AttributedRuntimeParameterAnnotations(name_index, length, true);
+    attr = std::make_shared<AttributedRuntimeParameterAnnotations>(name_index, length, true);
     break;
   case ATTRIBUTE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS:
-    attr = new AttributedRuntimeParameterAnnotations(name_index, length, false);
+    attr = std::make_shared<AttributedRuntimeParameterAnnotations>(name_index, length, false);
     break; 
   default:
-    attr = new AttributeInfo(name_index, length); 
+    attr = std::make_shared<AttributeInfo>(name_index, length); 
     fseek(file, length, SEEK_CUR);
     break;
   }
