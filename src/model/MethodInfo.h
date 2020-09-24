@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "AttributeInfo.h"
 
@@ -12,7 +13,7 @@ class MethodInfo {
         uint16_t name_index;
         uint16_t descriptor_index;
         uint16_t attributes_count;
-        std::vector<AttributeInfo> attributes;
+        std::vector<std::unique_ptr<AttributeInfo>> attributes;
 };
 
 #endif // METHOD_INFO_H

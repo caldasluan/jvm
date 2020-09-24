@@ -21,24 +21,15 @@ uint32_t u4Read(FILE* file) {
     return (u2Read(file) << 16) + u2Read(file);
 }
 
-void fill_attributes_info(FILE* file, uint16_t size, std::vector<AttributeInfo>& attributes) {
-    attributes.clear();
-    attributes.reserve(size);
+void fill_attributes_info(FILE* file, uint16_t size, std::vector<std::unique_ptr<AttributeInfo>>& attributes, ClassFile* classFile)
+{
+  attributes.clear();
+  attributes.reserve(size);
 
-    while (size--) {
-        AttributeInfo attribute;
-
-        attribute.attribute_name_index = u2Read(file);
-        attribute.attribute_length = u4Read(file);
-        
-        attribute.info.clear();
-        attribute.info.reserve(attribute.attribute_length);
-        for (int i = 0; i < attribute.attribute_length; i++) {
-            attribute.info.push_back(u1Read(file));
-        }
-
-        attributes.push_back(attribute);
-    }
+  for (int i = 0; i < (int)attributes.size(); i++)
+  {
+    attributes[i] = std::unique_ptr<AttributeInfo>(getAttribute(file, classFile));
+  }
 
 }
 
@@ -88,7 +79,7 @@ void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
     }
 }
 
-void fill_field_info(FILE* file, uint16_t size, std::vector<FieldInfo>& fields) {
+void fill_field_info(FILE* file, uint16_t size, std::vector<FieldInfo>& fields, ClassFile* classFile) {
     fields.clear();
     fields.reserve(size);
     while (size--) {
@@ -99,13 +90,13 @@ void fill_field_info(FILE* file, uint16_t size, std::vector<FieldInfo>& fields) 
         field.descriptor_index = u2Read(file);
         field.attributes_count = u2Read(file);
 
-        fill_attributes_info(file, field.attributes_count, field.attributes);
+        fill_attributes_info(file, field.attributes_count, field.attributes, classFile);
 
         fields.push_back(field);
     }
 }
 
-void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& methods) {
+void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& methods, ClassFile* classFile) {
     methods.clear();
     methods.reserve(size);
     while (size--) {
@@ -116,7 +107,7 @@ void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& method
         method.descriptor_index = u2Read(file);
         method.attributes_count = u2Read(file);
 
-        fill_attributes_info(file, method.attributes_count, method.attributes);
+        fill_attributes_info(file, method.attributes_count, method.attributes, classFile);
 
         methods.push_back(method);
     }
@@ -147,15 +138,15 @@ ClassFile& ReadModule::read_file(const char* file_name) {
 
     classFile->fields_count = u2Read(fp);
 
-    fill_field_info(fp, classFile->fields_count, classFile->fields);
+    fill_field_info(fp, classFile->fields_count, classFile->fields, classFile);
 
     classFile->methods_count = u2Read(fp);
 
-    fill_method_info(fp, classFile->methods_count, classFile->methods);
+    fill_method_info(fp, classFile->methods_count, classFile->methods, classFile);
 
     classFile->attributes_count = u2Read(fp);
 
-    fill_attributes_info(fp, classFile->attributes_count, classFile->attributes);
+    fill_attributes_info(fp, classFile->attributes_count, classFile->attributes, classFile);
 
     fclose(fp);
 

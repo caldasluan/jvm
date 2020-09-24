@@ -4,11 +4,14 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
+
+class ClassFile;
 
 #include "CpInfo.h"
-#include "FieldInfo.h"
-#include "MethodInfo.h"
-#include "AttributeInfo.h"
+class FieldInfo;
+class MethodInfo;
+class AttributeInfo;
 
 class ClassFile {
     public:   
@@ -27,12 +30,16 @@ class ClassFile {
         uint16_t methods_count;
         std::vector<MethodInfo> methods;
         uint16_t attributes_count;
-        std::vector<AttributeInfo> attributes;
+        std::vector<std::unique_ptr<AttributeInfo>> attributes;
 
         ClassFile();
 
         std::string get_string_constant_pool(uint16_t);
         std::string get_string_constant_pool(uint16_t, uint8_t);
 };
+
+#include "FieldInfo.h"
+#include "MethodInfo.h"
+#include "AttributeInfo.h"
 
 #endif // CLASS_FILE_H

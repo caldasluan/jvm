@@ -1,6 +1,4 @@
 #include "DisplayModule.h"
-#include "../model/MethodInfo.h"
-#include "../model/ClassFile.h"
 #include "../constants/AccessFlagsClassConst.h"
 #include "../constants/AccessFlagsMethodConst.h"
 #include "../constants/CpTagConst.h"
