@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
+
+class ClassFile;
 
 #include "CpInfo.h"
 #include "FieldInfo.h"
@@ -27,7 +30,7 @@ class ClassFile {
         uint16_t methods_count;
         std::vector<MethodInfo> methods;
         uint16_t attributes_count;
-        std::vector<AttributeInfo> attributes;
+        std::vector<std::shared_ptr<AttributeInfo>> attributes;
 
         ClassFile();
 

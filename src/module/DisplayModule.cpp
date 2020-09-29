@@ -1,6 +1,4 @@
 #include "DisplayModule.h"
-#include "../model/MethodInfo.h"
-#include "../model/ClassFile.h"
 #include "../constants/AccessFlagsClassConst.h"
 #include "../constants/AccessFlagsMethodConst.h"
 #include "../constants/CpTagConst.h"
@@ -86,6 +84,7 @@ void show_methods(ClassFile& classFile) {
         printf("\tName:\t\t\tcp_info#%d\t\t<%s>\n", methodInfo.name_index, classFile.get_string_constant_pool(methodInfo.name_index).c_str());
         printf("\tDescriptor:\t\tcp_info#%d\t\t<%s>\n", methodInfo.descriptor_index, classFile.get_string_constant_pool(methodInfo.descriptor_index).c_str());
         printf("\tAccess Flags:\t\t0x%04x\t\t\t[ %s]\n", methodInfo.access_flags, access_flags_methods(methodInfo.access_flags).c_str());
+        show_attributes(1, methodInfo.attributes, classFile);
         printf("\n");
     }
 }
@@ -104,4 +103,5 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Attributes Count: %d\n", classFile.attributes_count);
     show_constant_pool(classFile);
     show_methods(classFile);
+    show_attributes(0, classFile.attributes, classFile);
 }
