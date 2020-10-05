@@ -7,7 +7,7 @@
 {
 };*/
 
-typedef union
+/*typedef union
 {
   uint8_t frame_type;
   //struct same_frame *sameFrame;
@@ -17,18 +17,14 @@ typedef union
   //same_frame_extended sameFrameExtended;
   //append_frame appendFrame;
   //full_frame fullFrame;
-} stack_map_frame;
+} stack_map_frame;*/
 
 class AttributeStackMapTable : public AttributeInfo
 {
 public:
   AttributeStackMapTable(uint16_t _name_index, uint32_t _length) : AttributeInfo(_name_index, _length) {}
-  uint16_t entry_ammount;
-  std::vector<stack_map_frame> entries;
 
   void fillAttribute(FILE *file, ClassFile* classFile);
-
-  void showAttribute(int offset, int index, ClassFile& classFile); //Please god don't force me to implement this
 
   // Nao necessario.
 };

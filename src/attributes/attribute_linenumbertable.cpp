@@ -21,7 +21,7 @@ void AttributeLineNumberTable::showAttribute(int offset, int index, ClassFile& c
   for (int i = 0; i < line_number_table_length; i++)
   {
     printf("%*s%-4d %8d | %11d\n",
-           offset * OFFSET_AMMOUNT, "",
+           offset * OFFSET_AMMOUNT + OFFSET_AMMOUNT - 5, "",
            i,
            line_number_table[i].start_pc,
            line_number_table[i].line_number);
