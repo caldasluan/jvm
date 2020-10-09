@@ -59,13 +59,15 @@ void show_constant_pool(ClassFile& classFile) {
             /*case CpTagConst::CONSTANT_Integer:
                 printf("\t#%2d = Integer    \t\t %d\n", i, it->get_bytes());
                 break;
-            case CpTagConst::CONSTANT_Float:
+             CpTagConst::CONSTANT_Float:
                 printf("\t#%2d = Float    \t\t %.2f\n", i, it->get_bytes());
                 break;*/
             case CpTagConst::CONSTANT_Long:
+                printf("\t#%2d = Long    \t\t\t %lul\n", i, ((long)it->get_high_bytes() << 32) + it->get_low_bytes());
                 break;
-            case CpTagConst::CONSTANT_Double:
-                break;
+            /*case CpTagConst::CONSTANT_Double:
+                printf("\t#%2d = Double    \t\t\t %fd\n", i, ((long)it->get_high_bytes() << 32) + it->get_low_bytes());
+                break;*/
             case CpTagConst::CONSTANT_NameAndType:
                 printf("\t#%2d = NameAndType \t\t #%d:#%d \t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
                 break;
