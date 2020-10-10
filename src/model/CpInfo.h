@@ -18,6 +18,10 @@ class CpInfo {
         uint32_t get_high_bytes();
         uint32_t get_low_bytes();
         uint16_t get_lenght();
+        int get_int();
+        long long get_long();
+        float get_float();
+        double get_double();
         std::vector<char> get_bytes_utf8();
 };
 

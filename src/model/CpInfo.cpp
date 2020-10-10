@@ -39,6 +39,28 @@ uint16_t CpInfo::get_lenght() {
     return this->get_name_index();
 }
 
+int CpInfo::get_int() {
+    return this->get_bytes();
+}
+
+long long CpInfo::get_long() {
+    return ((long long)this->get_high_bytes() << 32) + this->get_low_bytes();
+}
+
+float CpInfo::get_float() {
+    uint32_t temp = this->get_bytes();
+    float f;
+    memcpy(&f, &temp, sizeof(float));
+    return f;
+}
+
+double CpInfo::get_double() {
+    uint64_t temp = this->get_long();
+    double d;
+    memcpy(&d, &temp, sizeof(double));
+    return d;
+}
+
 std::vector<char> CpInfo::get_bytes_utf8() {
     std::vector<char> value(this->info.begin() + 2, this->info.end());
     return value;

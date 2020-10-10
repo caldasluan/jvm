@@ -61,12 +61,14 @@ void fill_constant_pool(FILE* file, uint16_t size, std::vector<CpInfo>& pool) {
             cpInfo.info.push_back(u1Read(file));
             i = (cpInfo.info[0] << 8) + cpInfo.info[1];
         } else if (cpInfo.tag == CpTagConst::CONSTANT_Long || cpInfo.tag == CpTagConst::CONSTANT_Double) {
+            CpInfo cp;
+            cp.tag = cpInfo.tag;
+            cpInfo.tag = CpTagConst::CONSTANT_LargeNumeric;
             i = 8;
             while (i--) {
-                cpInfo.info.push_back(u1Read(file));
+                cp.info.push_back(u1Read(file));
             }
             i = 0;
-            CpInfo cp;
             pool.push_back(cp);
             size--;
         }
