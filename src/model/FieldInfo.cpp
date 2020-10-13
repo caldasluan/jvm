@@ -1,15 +1,20 @@
 
+#include <stdio.h>
 #include "FieldInfo.h"
-#include "AttributesInfo.h"
+#include "AttributeInfo.h"
 #include "../constants/AcessFlagsFieldConst.h"
 #include "../constants/AcessFlagsClassConst.h"
+#include <cstdint>
+#include <vector>
+#include <memory>
 
 
-void showFields(FieldInfo *fields, unit16_t fields_count){
-	int i;
+
+void showFields(field_info *fields, unit16_t fields_count){
+	int i,j;
 
 	for(i=0; i<fields_count; i++){
-	
+
 	switch(fields->access_flags){
 		case(PUBLIC):
 			printf("\tFields - Access Flags: Public\n");
@@ -40,7 +45,7 @@ void showFields(FieldInfo *fields, unit16_t fields_count){
 	printf("\tFields - Descriptor Index: %02x\n", fields->descriptor_index);
 	printf("\tFields - Attributes Count: %02x\n", fields->attributes_count);
 
-	
+
 
 	}
 }
