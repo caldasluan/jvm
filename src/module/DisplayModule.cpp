@@ -37,6 +37,16 @@ std::string access_flags_methods(uint16_t flags) {
     return s;
 }
 
+void show_interfaces(ClassFile& classFile) {
+    int count = 0;
+    printf("\nInterfaces:\n");
+    printf("Numero de entradas no array interface: %d\n", classFile.interfaces_count;);   
+    for (uint16_t index : classFile.interfaces) {
+        printf("#%d:\t %s\n", count, classFile.get_string_constant_pool(index).c_str()););
+        count++;
+    }
+}
+
 void show_constant_pool(ClassFile& classFile) {
     int i = 1;
     printf("\nConstant pool:\n");
@@ -108,6 +118,7 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Fields Count: %d\n", classFile.fields_count);
     printf("Methods Count: %d\n", classFile.methods_count);
     printf("Attributes Count: %d\n", classFile.attributes_count);
+    show_interfaces(classFile);
     show_constant_pool(classFile);
     show_methods(classFile);
     show_attributes(0, classFile.attributes, classFile);
