@@ -100,7 +100,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       break;
     case OP_LDC:
       aux1 = getU1(codeV);
-      printf(" #%d < %s >\n", (uint8_t)aux1, classFile.get_string_constant_pool(aux1).c_str());
+      printf(" #%d < %s >\n", (uint8_t)aux1, classFile.get_string_constant_complete(aux1).c_str());
       break;
     case OP_BIPUSH:
       printf(" %d\n", (int8_t)getU1(codeV));
@@ -108,7 +108,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
     case OP_2_CP:
     case OP_2_CPWIDE:
       aux1 = getU2(codeV);
-      printf(" #%d < %s >\n", aux1, classFile.get_string_constant_pool(aux1).c_str());
+      printf(" #%d < %s >\n", aux1, classFile.get_string_constant_complete(aux1).c_str());
       break;
     case OP_SIPUSH:
       aux1 = getU2(codeV);
@@ -129,13 +129,13 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       break;
     case OP_INVOKE_DYNAMIC:
       aux1 = getU2(codeV);
-      printf(" #%d < %s >\n", aux1, classFile.get_string_constant_pool(aux1).c_str());
+      printf(" #%d < %s >\n", aux1, classFile.get_string_constant_complete(aux1).c_str());
       codeV += 2;
       break;
     case OP_INVOKE_INTERFACE:
       aux1 = getU2(codeV);
       aux2 = getU1(codeV);
-      printf(" #%d < %s >, count %d\n", aux1, classFile.get_string_constant_pool(aux1).c_str(), aux2);
+      printf(" #%d < %s >, count %d\n", aux1, classFile.get_string_constant_complete(aux1).c_str(), aux2);
       codeV++;
       break;
     case OP_LOOKUPSWITCH:
@@ -148,7 +148,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
     case OP_MULTIANEWARRAY:
       aux1 = getU2(codeV);
       aux2 = getU1(codeV);
-      printf(" #%d < %s >, %d\n", aux1, classFile.get_string_constant_pool(aux1).c_str(), aux2);
+      printf(" #%d < %s >, %d\n", aux1, classFile.get_string_constant_complete(aux1).c_str(), aux2);
       break;
     case OP_NEWARRAY:
       aux1 = getU1(codeV);

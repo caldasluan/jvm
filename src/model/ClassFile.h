@@ -32,9 +32,8 @@ class ClassFile {
         uint16_t attributes_count;
         std::vector<std::shared_ptr<AttributeInfo>> attributes;
 
-        ClassFile();
-
         std::string get_string_constant_pool(uint16_t);
+        std::string get_string_constant_complete(uint16_t index);
         std::string get_string_constant_pool(uint16_t, uint8_t);
 };
 
