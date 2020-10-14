@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
             return 0;
 
         if(argc == 3) {
-            if(argv[2][1] == 'i') {
+            if(argv[2][0] == '-' && argv[2][1] == 'i') {
                 DisplayModule::show(*classFile);
             }
             else {
