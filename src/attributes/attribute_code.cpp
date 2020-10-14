@@ -139,16 +139,24 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       codeV++;
       break;
     case OP_LOOKUPSWITCH:
+      codeHelper = codeV - 1;
       codeV += (uint64_t)codeV % 4;
       aux1 = getU4(codeV);
       aux2 = getU4(codeV);
       printf(" def %d, pairs: %d\n", (int32_t)aux1, aux2);
-      codeV += aux2 * 8;
+      for(int i = 0; i < aux2; i++)
+      {
+        aux3 = getU4(codeV);
+        aux4 = getU4(codeV);
+        printf("%*s%-4d %d - %u(%+d)\n",
+          (offset * OFFSET_AMMOUNT) + 2 * OFFSET_AMMOUNT, "",
+          i, (int32_t)aux3, (uint32_t)(codeHelper - code + (int32_t)aux4), (int32_t)aux4);
+      }
       break;
     case OP_MULTIANEWARRAY:
       aux1 = getU2(codeV);
       aux2 = getU1(codeV);
-      printf(" #%d < %s >, %d\n", aux1, classFile.get_string_constant_complete(aux1).c_str(), aux2);
+      printf(" #%d < %s >, dimensions: %d\n", aux1, classFile.get_string_constant_complete(aux1).c_str(), aux2);
       break;
     case OP_NEWARRAY:
       aux1 = getU1(codeV);
@@ -164,7 +172,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       for(int i = 0; i < (int32_t)aux3 - (int32_t)aux2 + 1; i++)
       {
         aux4 = getU4(codeV);
-        printf("%*s%-4d %u (%+d)\n",
+        printf("%*s%-4d %u(%+d)\n",
           (offset * OFFSET_AMMOUNT) + 2 * OFFSET_AMMOUNT, "",
           (int32_t)aux2 + i, (uint32_t)(codeHelper - code + (int32_t)aux4), (int32_t)aux4);
       }
