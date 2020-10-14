@@ -6,6 +6,10 @@ int main(int argc, char *argv[])
     if(argc > 1 && argc <= 3) {
         char *file = argv[1];
         ClassFile* classFile = ReadModule::read_file(file);
+        
+        if(classFile == nullptr)
+            return 0;
+
         if(argc == 3) {
             if(argv[2][1] == 'i') {
                 DisplayModule::show(*classFile);

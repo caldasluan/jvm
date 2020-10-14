@@ -118,6 +118,12 @@ ClassFile* ReadModule::read_file(const char* file_name) {
     ClassFile *classFile = new ClassFile;
     FILE* fp;
     fp = fopen(file_name, "r");
+    
+    if(!fp)
+    {
+        printf("Não foi possivel ler o arquivo!\n");
+        return nullptr;
+    }
 
     classFile->magic = u4Read(fp);
     classFile->minor_version = u2Read(fp);
