@@ -4,6 +4,7 @@
 #include "../model/AttributeInfo.h"
 #include <iostream>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 
 uint8_t u1Read(FILE* file) {
@@ -134,6 +135,12 @@ ClassFile* ReadModule::read_file(const char* file_name) {
 
     classFile->access_flags = u2Read(fp);
     classFile->this_class = u2Read(fp);
+    std::string slamano(file_name, std::strlen(file_name) - 6);
+    if(classFile->get_string_constant_pool(classFile->this_class).compare(slamano.c_str()) != 0)
+    {
+        printf("Warning! Class name is different from file name!\n");
+    }
+
     classFile->super_class = u2Read(fp);
     classFile->interfaces_count = u2Read(fp);
 
