@@ -15,21 +15,21 @@ int main(int argc, char *argv[])
                 DisplayModule::show(*classFile);
             }
             else {
-                printf("Opção inválida\n");
+                printf("Opcao invalida\n");
                 delete classFile;
                 return 0;
             }
         }
         else {
-            printf("Execução em desenvolvimento\n");
+            printf("Execucao em desenvolvimento\n");
             delete classFile;
             return 0;
         }
         delete classFile;
     }
     else {
-        printf("\nExecução: ./jvm arquivo opção\n");
-        printf("\nOpções:\n");
+        printf("\nExecucao: ./jvm arquivo opcao\n");
+        printf("\nOpcoes:\n");
         printf("\t-i: leitor/exibidor de bytecode\n\n");
         return 0;
     }
