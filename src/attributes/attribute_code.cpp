@@ -81,8 +81,8 @@ uint32_t getU4(const char *&source)
 
 void AttributeCode::showCode(int offset, ClassFile& classFile)
 {
-  uint32_t aux1, aux2, aux3;
-  const char *codeV = code;
+  uint32_t aux1, aux2, aux3, aux4;
+  const char *codeV = code, *codeHelper;
   while (codeV < code + code_length)
   {
     printf("%*s%-4d %s",
@@ -139,7 +139,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       codeV++;
       break;
     case OP_LOOKUPSWITCH:
-      codeV = code + (((codeV - code) + 3) % 4);
+      codeV += (uint64_t)codeV % 4;
       aux1 = getU4(codeV);
       aux2 = getU4(codeV);
       printf(" def %d, pairs: %d\n", (int32_t)aux1, aux2);
@@ -155,12 +155,19 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       printf(" %d (%s)\n", aux1, array_types[aux1]);
       break;
     case OP_TABLESWITCH:
-      codeV = code + (((codeV - code) + 3) % 4);
+      codeHelper = codeV - 1;
+      codeV += (uint64_t)codeV % 4;
       aux1 = getU4(codeV);
       aux2 = getU4(codeV);
       aux3 = getU4(codeV);
       printf(" def %d, low: %d, high: %d\n", (int32_t)aux1, (int32_t)aux2, (int32_t)aux3);
-      codeV += ((int32_t)aux3 - (int32_t)aux2 + 1) * 4;
+      for(int i = 0; i < (int32_t)aux3 - (int32_t)aux2 + 1; i++)
+      {
+        aux4 = getU4(codeV);
+        printf("%*s%-4d %u (%+d)\n",
+          (offset * OFFSET_AMMOUNT) + 2 * OFFSET_AMMOUNT, "",
+          (int32_t)aux2 + i, (uint32_t)(codeHelper - code + (int32_t)aux4), (int32_t)aux4);
+      }
       break;
     case OP_WIDE:
       aux1 = getU1(codeV);
