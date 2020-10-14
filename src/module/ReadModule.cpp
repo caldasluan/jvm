@@ -135,8 +135,8 @@ ClassFile* ReadModule::read_file(const char* file_name) {
 
     classFile->access_flags = u2Read(fp);
     classFile->this_class = u2Read(fp);
-    std::string slamano(file_name, std::strlen(file_name) - 6);
-    if(classFile->get_string_constant_pool(classFile->this_class).compare(slamano.c_str()) != 0)
+    std::string expectedClassName(file_name, std::strlen(file_name) - 6);
+    if(classFile->get_string_constant_pool(classFile->this_class).compare(expectedClassName.c_str()) != 0)
     {
         printf("Warning! Class name is different from file name!\n");
     }

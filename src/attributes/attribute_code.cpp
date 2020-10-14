@@ -143,7 +143,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       codeV += (uint64_t)codeV % 4;
       aux1 = getU4(codeV);
       aux2 = getU4(codeV);
-      printf(" def %d, pairs: %d\n", (int32_t)aux1, aux2);
+      printf(" def %u(%+d), pairs: %d\n", (uint32_t)(codeHelper - code + (int32_t)aux1), (int32_t)aux1, aux2);
       for(int i = 0; i < aux2; i++)
       {
         aux3 = getU4(codeV);
@@ -168,7 +168,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       aux1 = getU4(codeV);
       aux2 = getU4(codeV);
       aux3 = getU4(codeV);
-      printf(" def %d, low: %d, high: %d\n", (int32_t)aux1, (int32_t)aux2, (int32_t)aux3);
+      printf(" def %u(%+d), low: %d, high: %d\n", (uint32_t)(codeHelper - code + (int32_t)aux1), (int32_t)aux1, (int32_t)aux2, (int32_t)aux3);
       for(int i = 0; i < (int32_t)aux3 - (int32_t)aux2 + 1; i++)
       {
         aux4 = getU4(codeV);
