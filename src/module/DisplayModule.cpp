@@ -1,6 +1,7 @@
 #include "DisplayModule.h"
 #include "../constants/AccessFlagsClassConst.h"
 #include "../constants/AccessFlagsMethodConst.h"
+#include "../constants/AccessFlagsFieldConst.h"
 #include "../constants/CpTagConst.h"
 #include <stdio.h>
 #include <cstdint>
@@ -37,12 +38,23 @@ std::string access_flags_methods(uint16_t flags) {
     return s;
 }
 
+std::string access_flags_field(uint16_t flags) {
+    std::string s;
+    if (flags & AccessFlagsFieldConst::ACC_PUBLIC) s.append("public ");
+    if (flags & AccessFlagsFieldConst::ACC_PRIVATE) s.append("private ");
+    if (flags & AccessFlagsFieldConst::ACC_PROTECTED) s.append("protected ");
+    if (flags & AccessFlagsFieldConst::ACC_STATIC) s.append("static ");
+    if (flags & AccessFlagsFieldConst::ACC_FINAL) s.append("final ");
+    if (flags & AccessFlagsFieldConst::ACC_VOLATILE) s.append("volatile ");
+    if (flags & AccessFlagsFieldConst::ACC_TRANSIENT) s.append("transient ");
+    return s;
+}
+
 void show_interfaces(ClassFile& classFile) {
     int count = 0;
     printf("\nInterfaces:\n");
-    printf("\tNumero de entradas no array interface: %d\n", classFile.interfaces_count);   
     for (uint16_t index : classFile.interfaces) {
-        printf("\t\t#%d:\t %s\n", count, classFile.get_string_constant_pool(index).c_str());
+        printf("\t#%4d = \t#%d\t< %s >\n", count, index, classFile.get_string_constant_pool(index).c_str());
         count++;
     }
 }
@@ -80,7 +92,7 @@ void show_constant_pool(ClassFile& classFile) {
                 printf("\t#%4d = Double    \t\t\t %lf\n", i, it->get_double());
                 break;
             case CpTagConst::CONSTANT_NameAndType:
-                printf("\t#%4d = NameAndType \t\t\t #%d:#%d \t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
+                printf("\t#%4d = NameAndType \t\t\t #%d:#%d \t\t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
                 break;
             case CpTagConst::CONSTANT_Utf8:
                 printf("\t#%4d = Utf8    \t\t\t %s\n", i, classFile.get_string_constant_pool(i).c_str());
@@ -106,6 +118,17 @@ void show_methods(ClassFile& classFile) {
     }
 }
 
+void show_fields(ClassFile& classFile) {
+    printf("\nFields:\n\n");
+    for (FieldInfo fieldInfo : classFile.fields) {
+        printf("\tName:\t\t\tcp_info#%d\t\t<%s>\n", fieldInfo.name_index, classFile.get_string_constant_pool(fieldInfo.name_index).c_str());
+        printf("\tDescriptor:\t\tcp_info#%d\t\t<%s>\n", fieldInfo.descriptor_index, classFile.get_string_constant_pool(fieldInfo.descriptor_index).c_str());
+        printf("\tAccess Flags:\t\t0x%04x\t\t\t[ %s]\n", fieldInfo.access_flags, access_flags_field(fieldInfo.access_flags).c_str());
+        show_attributes(1, fieldInfo.attributes, classFile);
+        printf("\n");
+    }
+}
+
 void DisplayModule::show(ClassFile& classFile) {
     printf("Magic Number: 0x%08x\n", classFile.magic);
     printf("Minor Version: %d\n", classFile.minor_version);
@@ -120,6 +143,7 @@ void DisplayModule::show(ClassFile& classFile) {
     printf("Attributes Count: %d\n", classFile.attributes_count);
     show_constant_pool(classFile);
     show_interfaces(classFile);
+    show_fields(classFile);
     show_methods(classFile);
     show_attributes(0, classFile.attributes, classFile);
 }

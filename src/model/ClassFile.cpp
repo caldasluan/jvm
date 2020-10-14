@@ -2,6 +2,7 @@
 #include "CpInfo.h"
 #include "../constants/CpTagConst.h"
 #include <stdio.h>
+#include <string>
 
 ClassFile::ClassFile() {}
 
@@ -27,6 +28,14 @@ std::string ClassFile::get_string_constant_pool(uint16_t index, uint8_t type) {
             return this->get_string_constant_pool(cpInfo.get_class_index(), 0);
         case CpTagConst::CONSTANT_Utf8:
             return get_string_utf8(cpInfo);
+        case CpTagConst::CONSTANT_Integer:
+            return std::to_string(cpInfo.get_int());
+        case CpTagConst::CONSTANT_Float:
+            return std::to_string(cpInfo.get_float());
+        case CpTagConst::CONSTANT_Long:
+            return std::to_string(cpInfo.get_long());
+        case CpTagConst::CONSTANT_Double:
+            return std::to_string(cpInfo.get_double());
         default:
             return "";
     }
