@@ -23,6 +23,8 @@
 #include <cstdint>
 #include <string>
 
+class Frame {};
+
 class Instruction
 {
 public:
@@ -30,6 +32,7 @@ public:
 
   const char *mnemonic;
   const uint8_t operands;
+  const void (*execution)(Frame&, uint32_t);
 };
 
 const std::array<Instruction, 202> instructions_mnemonics = {

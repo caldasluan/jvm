@@ -115,6 +115,7 @@ void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& method
     }
 }
 
+// TODO adicionar verificações na leitura da classe
 ClassFile* ReadModule::read_file(const char* file_name) {
     ClassFile *classFile = new ClassFile;
     FILE* fp;
