@@ -3,13 +3,23 @@
 #include "../model/Frame.h"
 #include "../attributes/instructions.h"
 
+void mostra(Frame& frame) {
+    printf("\npc: %d, instr: %02x pilha: %d\n", frame.pc, (uint8_t)frame.code->code[frame.pc], frame.operand_stack.size());
+    printf("vetor: ");
+    for (int i = 0; i < frame.local_variables.size(); i++) {
+        printf("%d = %d, ", i, frame.local_variables[i]);
+    }
+    printf("\n");
+    if (frame.operand_stack.size() > 0) printf("topo pilha: %d\n", frame.operand_stack.top());
+}
+
 void exec_jvm(ClassFile &classFile, MethodInfo& method) {
     std::stack<Frame> stack_frames;
     Frame current_frame = Frame(classFile, method);
 
-    while (current_frame.pc <= current_frame.code->code_length || stack_frames.size() > 0) {
-        printf("pc: %d\n", current_frame.pc);
-        instructions_mnemonics[current_frame.code->code[current_frame.pc]].execution(current_frame);
+    while (current_frame.pc < current_frame.code->code_length || stack_frames.size() > 0) {
+        mostra(current_frame);
+        instructions_mnemonics[(uint8_t)current_frame.code->code[current_frame.pc]].execution(current_frame);
         current_frame.pc++;
     }
 }
