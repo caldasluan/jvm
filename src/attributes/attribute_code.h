@@ -2,7 +2,6 @@
 #define JVM_ATTRIBUTE_CODE_H
 
 #include "../model/AttributeInfo.h"
-#include "instructions.h"
 
 typedef struct
 {

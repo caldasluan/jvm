@@ -1,5 +1,6 @@
 #include "module/ReadModule.h"
 #include "module/DisplayModule.h"
+#include "module/ExecModule.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
             }
         }
         else {
-            printf("Execucao em desenvolvimento\n");
+            ExecModule::exec(*classFile);
             delete classFile;
             return 0;
         }

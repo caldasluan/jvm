@@ -9,10 +9,10 @@
 
 class MethodInfo {
     public:
-        uint16_t access_flags; // AccessFlagsMethodConst
-        uint16_t name_index;
-        uint16_t descriptor_index;
-        uint16_t attributes_count;
+        uint16_t access_flags = 0; // AccessFlagsMethodConst
+        uint16_t name_index = 0;
+        uint16_t descriptor_index = 0;
+        uint16_t attributes_count = 0;
         std::vector<std::shared_ptr<AttributeInfo>> attributes;
 };
 

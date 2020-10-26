@@ -1,4 +1,5 @@
 #include "attribute_code.h"
+#include "instructions.h"
 
 AttributeCode::~AttributeCode()
 {

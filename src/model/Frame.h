@@ -5,16 +5,18 @@
 #include <vector>
 #include <stack>
 #include "ClassFile.h"
+#include "../attributes/attribute_code.h"
 
 class Frame {
     public:
         std::vector<uint32_t> local_variables;
         std::stack<uint32_t> operand_stack;
         ClassFile* class_file;
-        MethodInfo method;
+        MethodInfo* method;
+        AttributeCode* code;
         uint32_t pc;
 
-        Frame(ClassFile&, MethodInfo, int);
+        Frame(ClassFile&, MethodInfo&);
 };
 
 #endif // JVM_FRAME_H
