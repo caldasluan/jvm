@@ -22,8 +22,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
-
-class Frame {};
+#include "../model/Frame.h"
 
 class Instruction
 {
