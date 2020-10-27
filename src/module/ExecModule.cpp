@@ -15,12 +15,15 @@ void mostra(Frame& frame) {
 
 void exec_jvm(ClassFile &classFile, MethodInfo& method) {
     std::stack<Frame> stack_frames;
-    Frame current_frame = Frame(classFile, method);
+    stack_frames.push(Frame(classFile, method));
 
-    while (current_frame.pc < current_frame.code->code_length || stack_frames.size() > 0) {
-        mostra(current_frame);
-        instructions_mnemonics[(uint8_t)current_frame.code->code[current_frame.pc]].execution(current_frame);
-        current_frame.pc++;
+    while (stack_frames.size() > 0) {
+        // mostra(stack_frames.top());
+        instructions_mnemonics[(uint8_t)stack_frames.top().code->code[stack_frames.top().pc]].execution(stack_frames.top());
+        stack_frames.top().pc++;
+        if (stack_frames.top().pc >= stack_frames.top().code->code_length) {
+            stack_frames.pop();
+        }
     }
 }
 
