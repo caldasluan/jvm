@@ -684,7 +684,18 @@ void ldiv(Frame &frame) {
     frame.operand_stack.push(y);
 }
 
-void fdiv(Frame &frame) {}
+void fdiv(Frame &frame) {
+    float xf, yf;
+    uint32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    uint32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    memcpy(&xf, &x, sizeof(float));
+    memcpy(&yf, &y, sizeof(float));
+    xf /= yf;
+    memcpy(&x, &xf, sizeof(float));
+    frame.operand_stack.push(x);
+}
 void ddiv(Frame &frame) {}
 
 void irem(Frame &frame)
@@ -732,7 +743,15 @@ void lneg(Frame &frame) {
     frame.operand_stack.push(y);
 }
 
-void fneg(Frame &frame) {}
+void fneg(Frame &frame) {
+    float xf;
+    uint32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    memcpy(&xf, &x, sizeof(float));
+    xf *= -1;
+    memcpy(&x, &xf, sizeof(float));
+    frame.operand_stack.push(x);
+}
 void dneg(Frame &frame) {}
 
 void ishl(Frame &frame)
