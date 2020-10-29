@@ -1,18 +1,54 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <cmath>
 #include "instructions.h"
 #include "../constants/CpTagConst.h"
+
+int get_int(Frame &frame)
+{
+    uint32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    return x;
+}
+
+long long get_long(Frame &frame)
+{
+    uint64_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    x += (uint64_t)frame.operand_stack.top() << 32;
+    frame.operand_stack.pop();
+    return x;
+}
+
+float get_float(Frame &frame)
+{
+    float xf;
+    uint32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    memcpy(&xf, &x, sizeof(float));
+    return xf;
+}
+
+double get_double(Frame &frame)
+{
+    double xd;
+    uint64_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    x += ((uint64_t)frame.operand_stack.top() << 32);
+    frame.operand_stack.pop();
+    memcpy(&xd, &x, sizeof(double));
+    return xd;
+}
+
+// Início das instruções
 
 void nop(Frame &frame)
 {
     // Não fazer nada
 }
 
-void aconst_null(Frame &frame)
-{
-    frame.operand_stack.push(0);
-}
+void aconst_null(Frame &frame) {}
 
 void iconst_m1(Frame &frame)
 {
@@ -97,7 +133,7 @@ void dconst_0(Frame &frame)
 
 void dconst_1(Frame &frame)
 {
-    double d = 0.0;
+    double d = 1.0;
     uint64_t u;
     memcpy(&u, &d, sizeof(double));
 
@@ -155,7 +191,7 @@ void ldc2_w(Frame &frame)
     {
         uint64_t in;
         double f = frame.class_file->constant_pool[x].get_double();
-        memcpy(&in, &f, sizeof(float));
+        memcpy(&in, &f, sizeof(double));
         frame.operand_stack.push(in >> 32);
         frame.operand_stack.push(in);
     }
@@ -171,8 +207,7 @@ void lload(Frame &frame)
 {
     frame.pc++;
     frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc]]);
-    frame.pc++;
-    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc]]);
+    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1]);
 }
 
 void fload(Frame &frame)
@@ -185,8 +220,7 @@ void dload(Frame &frame)
 {
     frame.pc++;
     frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc]]);
-    frame.pc++;
-    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc]]);
+    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1]);
 }
 
 void aload(Frame &frame) {}
@@ -302,9 +336,8 @@ void istore(Frame &frame)
 void lstore(Frame &frame)
 {
     frame.pc++;
-    frame.local_variables[(uint32_t)frame.code->code[frame.pc]] = frame.operand_stack.top();
+    frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1] = frame.operand_stack.top();
     frame.operand_stack.pop();
-    frame.pc++;
     frame.local_variables[(uint32_t)frame.code->code[frame.pc]] = frame.operand_stack.top();
     frame.operand_stack.pop();
 }
@@ -319,9 +352,8 @@ void fstore(Frame &frame)
 void dstore(Frame &frame)
 {
     frame.pc++;
-    frame.local_variables[(uint32_t)frame.code->code[frame.pc]] = frame.operand_stack.top();
+    frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1] = frame.operand_stack.top();
     frame.operand_stack.pop();
-    frame.pc++;
     frame.local_variables[(uint32_t)frame.code->code[frame.pc]] = frame.operand_stack.top();
     frame.operand_stack.pop();
 }
@@ -549,38 +581,23 @@ void swap(Frame &frame)
 
 void iadd(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    frame.operand_stack.push(x + y);
+    frame.operand_stack.push(get_int(frame) + get_int(frame));
 }
 
 void ladd(Frame &frame)
 {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     x += y;
-    uint32_t z = x >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
 
 void fadd(Frame &frame)
 {
-    float xf, yf;
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    memcpy(&xf, &x, sizeof(float));
-    memcpy(&yf, &y, sizeof(float));
+    uint32_t x;
+    float xf = get_float(frame);
+    float yf = get_float(frame);
     xf += yf;
     memcpy(&x, &xf, sizeof(float));
     frame.operand_stack.push(x);
@@ -588,268 +605,310 @@ void fadd(Frame &frame)
 
 void dadd(Frame &frame)
 {
-    double xd, yd;
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    memcpy(&xd, &x, sizeof(double));
-    memcpy(&yd, &y, sizeof(double));
+    double xd = get_double(frame);
+    double yd = get_double(frame);
+    uint64_t x;
     xd += yd;
     memcpy(&x, &xd, sizeof(double));
-    uint32_t z = x >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
 
 void isub(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame);
+    int y = get_int(frame);
     frame.operand_stack.push(y - x);
 }
 
-void lsub(Frame &frame) {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void lsub(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     y -= x;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void fsub(Frame &frame) {}
-void dsub(Frame &frame) {}
+void fsub(Frame &frame)
+{
+    float xf = get_float(frame);
+    float yf = get_float(frame);
+    uint32_t x;
+    yf -= xf;
+    memcpy(&x, &yf, sizeof(float));
+    frame.operand_stack.push(x);
+}
+
+void dsub(Frame &frame)
+{
+    double xd = get_double(frame);
+    double yd = get_double(frame);
+    uint64_t x;
+    yd -= xd;
+    memcpy(&x, &yd, sizeof(double));
+    frame.operand_stack.push(x >> 32);
+    frame.operand_stack.push(x);
+}
 
 void imul(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame);
+    int y = get_int(frame);
     frame.operand_stack.push(x * y);
 }
 
-void lmul(Frame &frame) {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void lmul(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     y *= x;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void fmul(Frame &frame) {}
-void dmul(Frame &frame) {}
+void fmul(Frame &frame)
+{
+    float xf = get_float(frame);
+    float yf = get_float(frame);
+    uint32_t x;
+    yf *= xf;
+    memcpy(&x, &yf, sizeof(float));
+    frame.operand_stack.push(x);
+}
+
+void dmul(Frame &frame)
+{
+    double xd = get_double(frame);
+    double yd = get_double(frame);
+    uint64_t x;
+    yd *= xd;
+    memcpy(&x, &yd, sizeof(double));
+    frame.operand_stack.push(x >> 32);
+    frame.operand_stack.push(x);
+}
 
 void idiv(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame);
+    int y = get_int(frame);
     frame.operand_stack.push(y / x);
 }
 
-void ldiv(Frame &frame) {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void ldiv(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     y /= x;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void fdiv(Frame &frame) {
-    float xf, yf;
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    memcpy(&xf, &x, sizeof(float));
-    memcpy(&yf, &y, sizeof(float));
-    xf /= yf;
-    memcpy(&x, &xf, sizeof(float));
+void fdiv(Frame &frame)
+{
+    float xf = get_float(frame);
+    float yf = get_float(frame);
+    uint32_t x;
+    yf /= xf;
+    memcpy(&x, &yf, sizeof(float));
     frame.operand_stack.push(x);
 }
-void ddiv(Frame &frame) {}
+
+void ddiv(Frame &frame)
+{
+    double xd = get_double(frame);
+    double yd = get_double(frame);
+    uint64_t x;
+    yd /= xd;
+    memcpy(&x, &yd, sizeof(double));
+    frame.operand_stack.push(x >> 32);
+    frame.operand_stack.push(x);
+}
 
 void irem(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame);
+    int y = get_int(frame);
     frame.operand_stack.push(y % x);
 }
 
-void lrem(Frame &frame) {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void lrem(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     y %= x;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void frem(Frame &frame) {}
-void drem(Frame &frame) {}
+void frem(Frame &frame)
+{
+    float xf = get_float(frame);
+    float yf = get_float(frame);
+    uint32_t x;
+    yf = fmod(yf, xf);
+    memcpy(&x, &yf, sizeof(float));
+    frame.operand_stack.push(x);
+}
+
+void drem(Frame &frame)
+{
+    double xd = get_double(frame);
+    double yd = get_double(frame);
+    uint64_t x;
+    yd = fmod(yd, xd);
+    memcpy(&x, &yd, sizeof(double));
+    frame.operand_stack.push(x >> 32);
+    frame.operand_stack.push(x);
+}
 
 void ineg(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    frame.operand_stack.push(x * -1);
+    frame.operand_stack.push(get_int(frame) * -1);
 }
 
-void lneg(Frame &frame) {
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void lneg(Frame &frame)
+{
+    long long y = get_long(frame);
     y *= -1;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void fneg(Frame &frame) {
-    float xf;
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    memcpy(&xf, &x, sizeof(float));
+void fneg(Frame &frame)
+{
+    float xf = get_float(frame);
+    uint32_t x;
     xf *= -1;
     memcpy(&x, &xf, sizeof(float));
     frame.operand_stack.push(x);
 }
-void dneg(Frame &frame) {}
+
+void dneg(Frame &frame)
+{
+    double xd = get_double(frame);
+    uint64_t x;
+    xd *= -1;
+    memcpy(&x, &xd, sizeof(double));
+    frame.operand_stack.push(x >> 32);
+    frame.operand_stack.push(x);
+}
 
 void ishl(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top() & 0x1F;
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame) & 0x1F;
+    int y = get_int(frame);
     frame.operand_stack.push(y << x);
 }
 
-void lshl(Frame &frame) {
-    uint32_t y = frame.operand_stack.top() & 0x3F;
-    frame.operand_stack.pop();
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void lshl(Frame &frame)
+{
+    int y = get_int(frame) & 0x3F;
+    long long x = get_long(frame);
     x <<= y;
-
-    uint32_t z = x >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
 
 void ishr(Frame &frame)
 {
     uint64_t mask = 0;
-    uint32_t x = frame.operand_stack.top() & 0x1F;
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame) & 0x1F;
+    int y = get_int(frame);
     if ((y & 0x80000000) != 0)
         mask = mask_shift[x + 32];
     frame.operand_stack.push((y >> x) | mask);
 }
 
-void lshr(Frame &frame) {
+void lshr(Frame &frame)
+{
     uint64_t mask = 0;
-    uint32_t x = frame.operand_stack.top() & 0x3F;
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+    int x = get_int(frame) & 0x3F;
+    long long y = get_long(frame);
     if ((y & 0x8000000000000000) != 0)
         mask = mask_shift[x];
     y = (y >> x) | mask;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void iushr(Frame &frame) {}
-void lushr(Frame &frame) {}
+void iushr(Frame &frame) {
+    
+    int x = get_int(frame) & 0x1F;
+    int y = get_int(frame);
+    uint64_t mask = ~mask_shift[x + 32];
+    frame.operand_stack.push((y >> x) & mask);
+}
+
+void lushr(Frame &frame) {
+    int x = get_int(frame) & 0x3F;
+    long long y = get_long(frame);
+    uint64_t mask = ~mask_shift[x];
+    y = (y >> x) | mask;
+    frame.operand_stack.push(y >> 32);
+    frame.operand_stack.push(y);
+}
 
 void iand(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    uint32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int x = get_int(frame);
+    int y = get_int(frame);
     frame.operand_stack.push(x & y);
 }
 
-void land(Frame &frame) {
-    uint64_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
-    uint64_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    y += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void land(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
     y &= x;
-    uint32_t z = y >> 32;
-    frame.operand_stack.push(z);
+    frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void ior(Frame &frame) {}
-void lor(Frame &frame) {}
-void ixor(Frame &frame) {}
-void lxor(Frame &frame) {}
+void ior(Frame &frame)
+{
+    int x = get_int(frame);
+    int y = get_int(frame);
+    frame.operand_stack.push(x | y);
+}
+
+void lor(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
+    y |= x;
+    frame.operand_stack.push(y >> 32);
+    frame.operand_stack.push(y);
+}
+
+void ixor(Frame &frame)
+{
+    int x = get_int(frame);
+    int y = get_int(frame);
+    frame.operand_stack.push(x ^ y);
+}
+
+void lxor(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
+    y ^= x;
+    frame.operand_stack.push(y >> 32);
+    frame.operand_stack.push(y);
+}
+
 void iinc(Frame &frame) {}
 
 void i2l(Frame &frame)
 {
-    long x = (int)frame.operand_stack.top();
-    frame.operand_stack.pop();
+    long x = get_int(frame);
     frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
 
 void i2f(Frame &frame)
 {
-    float x = (int)frame.operand_stack.top();
-    frame.operand_stack.pop();
+    float x = get_int(frame);
     uint32_t y;
     memcpy(&y, &x, sizeof(float));
     frame.operand_stack.push(y);
@@ -857,32 +916,29 @@ void i2f(Frame &frame)
 
 void i2d(Frame &frame)
 {
-    double x = (int)frame.operand_stack.top();
-    frame.operand_stack.pop();
+    double x = get_int(frame);
     uint64_t y;
     memcpy(&y, &x, sizeof(double));
     frame.operand_stack.push(y >> 32);
     frame.operand_stack.push(y);
 }
 
-void l2i(Frame &frame) {}
+void l2i(Frame &frame) {
+    frame.operand_stack.push((int)get_long(frame));
+}
 
-void l2f(Frame &frame) {
-    long long x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void l2f(Frame &frame)
+{
+    long long x = get_long(frame);
     float y = x;
     uint32_t z;
     memcpy(&z, &y, sizeof(float));
     frame.operand_stack.push(z);
 }
 
-void l2d(Frame &frame) {
-    long long x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    x += ((uint64_t)frame.operand_stack.top() << 32);
-    frame.operand_stack.pop();
+void l2d(Frame &frame)
+{
+    long long x = get_long(frame);
     double y = x;
     uint64_t z;
     memcpy(&z, &y, sizeof(double));
@@ -890,41 +946,176 @@ void l2d(Frame &frame) {
     frame.operand_stack.push(z);
 }
 
-void f2i(Frame &frame) {}
-void f2l(Frame &frame) {}
-void f2d(Frame &frame) {}
-void d2i(Frame &frame) {}
-void d2l(Frame &frame) {}
-void d2f(Frame &frame) {}
+void f2i(Frame &frame)
+{
+    int x = get_float(frame);
+    frame.operand_stack.push(x);
+}
+
+void f2l(Frame &frame)
+{
+    long long y = get_float(frame);
+    frame.operand_stack.push(y >> 32);
+    frame.operand_stack.push(y);
+}
+
+void f2d(Frame &frame)
+{
+    double d = get_float(frame);
+    uint64_t y;
+    memcpy(&y, &d, sizeof(double));
+    frame.operand_stack.push(y >> 32);
+    frame.operand_stack.push(y);
+}
+
+void d2i(Frame &frame)
+{
+    frame.operand_stack.push((int)get_double(frame));
+}
+
+void d2l(Frame &frame)
+{
+    long long ll = get_double(frame);
+    frame.operand_stack.push(ll >> 32);
+    frame.operand_stack.push(ll);
+}
+
+void d2f(Frame &frame)
+{
+    float f = get_double(frame);
+    uint32_t z;
+    memcpy(&z, &f, sizeof(float));
+    frame.operand_stack.push(z);
+}
 
 void i2b(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top() & 0x000000FF;
+    uint32_t x = get_int(frame) & 0x000000FF;
     if ((x & 0x00000080) == 0x00000080)
         x |= 0xFFFFFF00;
-    frame.operand_stack.pop();
     frame.operand_stack.push(x);
 }
 
 void i2c(Frame &frame)
 {
-    uint32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    frame.operand_stack.push(x & 0x0000FFFF);
+    frame.operand_stack.push(get_int(frame) & 0x0000FFFF);
 }
 
-void i2s(Frame &frame) {}
-void lcmp(Frame &frame) {}
-void fcmpl(Frame &frame) {}
-void fcmpg(Frame &frame) {}
-void dcmpl(Frame &frame) {}
-void dcmpg(Frame &frame) {}
-void ifeq(Frame &frame) {}
-void ifne(Frame &frame) {}
-void iflt(Frame &frame) {}
-void ifge(Frame &frame) {}
-void ifgt(Frame &frame) {}
-void ifle(Frame &frame) {}
+void i2s(Frame &frame) {
+    frame.operand_stack.push(get_int(frame) & 0x0000FFFF);
+}
+
+void lcmp(Frame &frame)
+{
+    long long x = get_long(frame);
+    long long y = get_long(frame);
+    frame.operand_stack.push(y > x ? 1 : y < x ? -1 : 0);
+}
+
+// Todo tratar NaN
+void fcmpl(Frame &frame)
+{
+    float fval2 = get_float(frame);
+    float fval1 = get_float(frame);
+    frame.operand_stack.push(fval1 > fval2 ? 1 : fval1 < fval2 ? -1 : 0);
+}
+
+// Todo tratar NaN
+void fcmpg(Frame &frame)
+{
+    float fval2 = get_float(frame);
+    float fval1 = get_float(frame);
+    frame.operand_stack.push(fval1 > fval2 ? 1 : fval1 < fval2 ? -1 : 0);
+}
+
+// Todo tratar NaN
+void dcmpl(Frame &frame)
+{
+    double val2 = get_double(frame);
+    double val1 = get_double(frame);
+    frame.operand_stack.push(val1 > val2 ? 1 : val1 < val2 ? -1 : 0);
+}
+
+// Todo tratar NaN
+void dcmpg(Frame &frame)
+{
+    double val2 = get_double(frame);
+    double val1 = get_double(frame);
+    frame.operand_stack.push(val1 > val2 ? 1 : val1 < val2 ? -1 : 0);
+}
+
+void ifeq(Frame &frame)
+{
+    if (get_int(frame) == 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
+void ifne(Frame &frame)
+{
+    if (get_int(frame) != 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
+void iflt(Frame &frame)
+{
+    if (get_int(frame) < 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
+void ifge(Frame &frame)
+{
+    if (get_int(frame) >= 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
+void ifgt(Frame &frame)
+{
+    if (get_int(frame) > 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
+void ifle(Frame &frame)
+{
+    if (get_int(frame) <= 0)
+    {
+        frame.pc += (((uint16_t)frame.code->code[frame.pc + 1] << 8) | (uint16_t)frame.code->code[frame.pc + 2]) - 1;
+    }
+    else
+    {
+        frame.pc += 2;
+    }
+}
+
 void if_icmpeq(Frame &frame) {}
 void if_icmpne(Frame &frame) {}
 void if_icmplt(Frame &frame) {}
@@ -990,7 +1181,7 @@ void invokevirtual(Frame &frame)
             frame.operand_stack.pop();
             uint64_t b = frame.operand_stack.top();
             frame.operand_stack.pop();
-            printf("%lld\n", (b << 32) + a);
+            printf("%lld\n", (b << 32) + (long long)a);
         }
         else if (method_desc.compare("(F)V") == 0)
         {
@@ -1002,11 +1193,11 @@ void invokevirtual(Frame &frame)
         }
         else if (method_desc.compare("(D)V") == 0)
         {
-            uint32_t a = frame.operand_stack.top();
+            uint64_t a = frame.operand_stack.top();
             frame.operand_stack.pop();
             uint64_t b = frame.operand_stack.top();
             frame.operand_stack.pop();
-            b = (b << 32) + a;
+            b = (b << 32) | a;
             double d;
             memcpy(&d, &b, sizeof(double));
             printf("%lf\n", d);
