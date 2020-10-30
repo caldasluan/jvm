@@ -27,6 +27,7 @@ void exec_jvm(ClassFile &classFile, MethodInfo& method) {
     }
 }
 
+// TODO passar argumentos da linha de comando pro metodo main
 void ExecModule::exec(ClassFile &classFile)
 {
     MethodInfo method_main;

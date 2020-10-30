@@ -173,7 +173,23 @@ void ldc(Frame &frame)
     }
 }
 
-void ldc_w(Frame &frame) {}
+// ToDo falta String
+void ldc_w(Frame &frame)
+{
+    uint8_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint8_t tag = frame.class_file->constant_pool[x].tag;
+    if (tag == CpTagConst::CONSTANT_Integer)
+    {
+        frame.operand_stack.push(frame.class_file->constant_pool[x].get_int());
+    }
+    else if (tag == CpTagConst::CONSTANT_Float)
+    {
+        uint32_t in;
+        float f = frame.class_file->constant_pool[x].get_float();
+        memcpy(&in, &f, sizeof(float));
+        frame.operand_stack.push(in);
+    }
+}
 
 void ldc2_w(Frame &frame)
 {
@@ -897,7 +913,12 @@ void lxor(Frame &frame)
     frame.operand_stack.push(y);
 }
 
-void iinc(Frame &frame) {}
+void iinc(Frame &frame)
+{
+    uint16_t x = frame.code->code[++frame.pc];
+    int32_t add = (int8_t)(frame.code->code[++frame.pc]);
+    frame.local_variables[x] = (int32_t)(frame.local_variables[x]) + add;
+}
 
 void i2l(Frame &frame)
 {
