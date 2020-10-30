@@ -136,8 +136,10 @@ ClassFile* ReadModule::read_file(const char* file_name) {
 
     classFile->access_flags = u2Read(fp);
     classFile->this_class = u2Read(fp);
-    std::string expectedClassName(file_name, std::strlen(file_name) - 6);
-    if(classFile->get_string_constant_pool(classFile->this_class).compare(expectedClassName.c_str()) != 0)
+    
+    std::string className = classFile->get_string_constant_pool(classFile->this_class) + ".class";
+    std::string sFileName(file_name);
+    if(sFileName.rfind(className, sFileName.find_last_of("/\\") + 1) == std::string::npos)
     {
         printf("Warning! Class name is different from file name!\n");
     }

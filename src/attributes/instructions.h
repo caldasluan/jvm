@@ -24,6 +24,11 @@
 #include <string>
 #include "../model/Frame.h"
 
+int get_int(Frame &frame);
+long long get_long(Frame &frame);
+float get_float(Frame &frame);
+double get_double(Frame &frame);
+
 void nop(Frame &);
 void aconst_null(Frame &);
 void iconst_m1(Frame &);

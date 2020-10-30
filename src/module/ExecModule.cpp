@@ -4,7 +4,7 @@
 #include "../attributes/instructions.h"
 
 void mostra(Frame& frame) {
-    printf("\npc: %d, instr: %02x pilha: %d\n", frame.pc, (uint8_t)frame.code->code[frame.pc], frame.operand_stack.size());
+    printf("\npc: %d, instr: %02x pilha: %lu\n", frame.pc, (uint8_t)frame.code->code[frame.pc], frame.operand_stack.size());
     printf("vetor: ");
     for (int i = 0; i < frame.local_variables.size(); i++) {
         printf("%d = %d, ", i, frame.local_variables[i]);
@@ -21,8 +21,25 @@ void exec_jvm(ClassFile &classFile, MethodInfo& method) {
         // mostra(stack_frames.top());
         instructions_mnemonics[(uint8_t)stack_frames.top().code->code[stack_frames.top().pc]].execution(stack_frames.top());
         stack_frames.top().pc++;
-        if (stack_frames.top().pc >= stack_frames.top().code->code_length) {
-            stack_frames.pop();
+        if (stack_frames.top().pc >= stack_frames.top().code->code_length)
+        {
+            if(stack_frames.top().ret_words == 1)
+            {
+                uint32_t ret = stack_frames.top().operand_stack.top();
+                stack_frames.pop();
+                stack_frames.top().operand_stack.push(ret);
+            }
+            else if(stack_frames.top().ret_words == 2)
+            {
+                uint32_t ret1 = stack_frames.top().operand_stack.top();
+                stack_frames.top().operand_stack.pop();
+                uint32_t ret2 = stack_frames.top().operand_stack.top();
+                stack_frames.pop();
+                stack_frames.top().operand_stack.push(ret2);
+                stack_frames.top().operand_stack.push(ret1);
+            }
+            else
+                stack_frames.pop();
         }
     }
 }

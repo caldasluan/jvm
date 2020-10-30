@@ -15,6 +15,7 @@ class Frame {
         MethodInfo* method;
         AttributeCode* code;
         uint32_t pc;
+        uint8_t ret_words;
 
         Frame(ClassFile&, MethodInfo&);
 };

@@ -8,4 +8,5 @@ Frame::Frame(ClassFile& class_file, MethodInfo& method) {
     AttributeCode* code = dynamic_cast<AttributeCode*>(method.attributes[0].get());
     this->code = code;
     this->local_variables.resize(code->max_locals, 0);
+    this->ret_words = 0;
 }

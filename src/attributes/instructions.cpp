@@ -239,7 +239,10 @@ void dload(Frame &frame)
     frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1]);
 }
 
-void aload(Frame &frame) {}
+void aload(Frame &frame)
+{
+    
+}
 
 void iload_0(Frame &frame)
 {
@@ -915,9 +918,9 @@ void lxor(Frame &frame)
 
 void iinc(Frame &frame)
 {
-    uint16_t x = frame.code->code[++frame.pc];
-    int32_t add = (int8_t)(frame.code->code[++frame.pc]);
-    frame.local_variables[x] = (int32_t)(frame.local_variables[x]) + add;
+    uint16_t index = frame.code->code[++frame.pc];
+    int32_t add = (int32_t)(frame.code->code[++frame.pc]);
+    frame.local_variables[index] = (int32_t)(frame.local_variables[index]) + add;
 }
 
 void i2l(Frame &frame)
@@ -1137,24 +1140,135 @@ void ifle(Frame &frame)
     }
 }
 
-void if_icmpeq(Frame &frame) {}
-void if_icmpne(Frame &frame) {}
-void if_icmplt(Frame &frame) {}
-void if_icmpge(Frame &frame) {}
-void if_icmpgt(Frame &frame) {}
-void if_icmple(Frame &frame) {}
+void if_icmpeq(Frame &frame)
+{   
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y == x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_icmpne(Frame &frame)
+{
+    int32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y != x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_icmplt(Frame &frame)
+{
+    int32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y < x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_icmpge(Frame &frame)
+{
+    int32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y >= x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_icmpgt(Frame &frame)
+{
+    int32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y > x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_icmple(Frame &frame)
+{
+    int32_t x = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t y = frame.operand_stack.top();
+    frame.operand_stack.pop();
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y <= x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
 void if_acmpeq(Frame &frame) {}
 void if_acmpne(Frame &frame) {}
-void c_goto(Frame &frame) {}
-void jsr(Frame &frame) {}
-void ret(Frame &frame) {}
+
+void c_goto(Frame &frame)
+{
+    frame.pc += (int32_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]) - 3;
+}
+
+void jsr(Frame &frame)
+{
+    int32_t offset = ((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    frame.operand_stack.push(frame.pc + 1);
+    frame.pc += offset - 3;
+}
+
+void ret(Frame &frame)
+{
+    frame.pc = frame.local_variables[frame.code->code[++frame.pc]] - 1;
+}
+
+// TODO switchs
 void tableswitch(Frame &frame) {}
 void lookupswitch(Frame &frame) {}
-void ireturn(Frame &frame) {}
-void lreturn(Frame &frame) {}
-void freturn(Frame &frame) {}
-void dreturn(Frame &frame) {}
-void areturn(Frame &frame) {}
+
+void ireturn(Frame &frame)
+{
+    frame.ret_words = 1;
+    frame.pc = frame.code->code_length;
+}
+
+void lreturn(Frame &frame)
+{
+    frame.ret_words = 2;
+    frame.pc = frame.code->code_length;
+}
+
+void freturn(Frame &frame)
+{
+    frame.ret_words = 1;
+    frame.pc = frame.code->code_length;
+}
+
+void dreturn(Frame &frame)
+{
+    frame.ret_words = 2;
+    frame.pc = frame.code->code_length;
+}
+
+void areturn(Frame &frame)
+{
+    frame.ret_words = 1;
+    frame.pc = frame.code->code_length;
+}
 
 void c_return(Frame &frame)
 {
@@ -1239,9 +1353,61 @@ void checkcast(Frame &frame) {}
 void instanceof (Frame & frame) {}
 void monitorenter(Frame &frame) {}
 void monitorexit(Frame &frame) {}
-void wide(Frame &frame) {}
+
+void wide(Frame &frame)
+{
+    uint8_t opcode = frame.code->code[++frame.pc];
+    if(opcode == 0x84)
+    {
+        uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+        int32_t add = (int32_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.local_variables[index] = (int32_t)(frame.local_variables[index]) + add;
+    }
+    else if(opcode == 0x16 || opcode == 0x18)
+    {
+        uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.operand_stack.push(frame.local_variables[index]);
+        frame.operand_stack.push(frame.local_variables[index + 1]);
+    }
+    else if(opcode == 0x15 || opcode == 0x17 || opcode == 0x19)
+    {
+        uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.operand_stack.push(frame.local_variables[index]);
+    }
+    else if(opcode == 0x37 || opcode == 0x39)
+    {
+        uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.local_variables[index + 1] = frame.operand_stack.top();
+        frame.operand_stack.pop();
+        frame.local_variables[index] = frame.operand_stack.top();
+        frame.operand_stack.pop();
+    }
+    else if(opcode == 0xa9)
+    {
+        uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.pc = frame.local_variables[index] - 1;
+    }
+    else
+    {
+        uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+        frame.local_variables[index] = frame.operand_stack.top();
+        frame.operand_stack.pop();
+    }
+    
+}
+
 void multianewarray(Frame &frame) {}
 void ifnull(Frame &frame) {}
 void ifnonnull(Frame &frame) {}
-void goto_w(Frame &frame) {}
-void jsr_w(Frame &frame) {}
+
+void goto_w(Frame &frame)
+{
+    frame.pc += (int32_t)((frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    frame.pc -= 5;
+}
+void jsr_w(Frame &frame)
+{
+    int32_t offset = ((frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    frame.operand_stack.push(frame.pc + 1);
+    frame.pc += offset - 5;
+}
