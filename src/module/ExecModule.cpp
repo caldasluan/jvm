@@ -1,4 +1,3 @@
-#include <stack>
 #include "ExecModule.h"
 #include "../model/Frame.h"
 #include "../attributes/instructions.h"
@@ -13,59 +12,111 @@ void mostra(Frame& frame) {
     if (frame.operand_stack.size() > 0) printf("topo pilha: %d\n", frame.operand_stack.top());
 }
 
-void exec_jvm(ClassFile &classFile, MethodInfo& method) {
-    std::stack<Frame> stack_frames;
-    stack_frames.push(Frame(classFile, method));
-
-    while (stack_frames.size() > 0) {
-        // mostra(stack_frames.top());
-        instructions_mnemonics[(uint8_t)stack_frames.top().code->code[stack_frames.top().pc]].execution(stack_frames.top());
-        stack_frames.top().pc++;
-        if (stack_frames.top().pc >= stack_frames.top().code->code_length)
+void ExecModule::exec_jvm(Runtime &runtime) {
+    while (runtime.stack_frames.size() > 0) {
+        // mostra(runtime.stack_frames.top());
+        // printf("%s.%s\n", runtime.stack_frames.top().class_info->class_file->get_string_constant_pool(runtime.stack_frames.top().class_info->class_file->this_class).c_str(), runtime.stack_frames.top().class_info->class_file->get_string_constant_pool(runtime.stack_frames.top().method->name_index).c_str());
+        instructions_mnemonics[(uint8_t)runtime.stack_frames.top().code->code[runtime.stack_frames.top().pc]].execution(runtime.stack_frames.top());
+        runtime.stack_frames.top().pc++;
+        if (runtime.stack_frames.top().pc >= runtime.stack_frames.top().code->code_length)
         {
-            if(stack_frames.top().ret_words == 1)
+            if(runtime.stack_frames.top().ret_words == 1)
             {
-                uint32_t ret = stack_frames.top().operand_stack.top();
-                stack_frames.pop();
-                stack_frames.top().operand_stack.push(ret);
+                uint32_t ret = runtime.stack_frames.top().operand_stack.top();
+                runtime.stack_frames.pop();
+                runtime.stack_frames.top().operand_stack.push(ret);
             }
-            else if(stack_frames.top().ret_words == 2)
+            else if(runtime.stack_frames.top().ret_words == 2)
             {
-                uint32_t ret1 = stack_frames.top().operand_stack.top();
-                stack_frames.top().operand_stack.pop();
-                uint32_t ret2 = stack_frames.top().operand_stack.top();
-                stack_frames.pop();
-                stack_frames.top().operand_stack.push(ret2);
-                stack_frames.top().operand_stack.push(ret1);
+                uint32_t ret1 = runtime.stack_frames.top().operand_stack.top();
+                runtime.stack_frames.top().operand_stack.pop();
+                uint32_t ret2 = runtime.stack_frames.top().operand_stack.top();
+                runtime.stack_frames.pop();
+                runtime.stack_frames.top().operand_stack.push(ret2);
+                runtime.stack_frames.top().operand_stack.push(ret1);
             }
             else
-                stack_frames.pop();
+                runtime.stack_frames.pop();
         }
     }
 }
 
-// TODO passar argumentos da linha de comando pro metodo main
-void ExecModule::exec(ClassFile &classFile)
+//TODO fazer a classe Object ser carregavel, nao faco ideia de como fazer isso ainda
+// Le e aloca memoria pras variaveis estaticas, deixa preparadas pra rodar clinit, se houver.
+ClassInfo* ExecModule::read_load_class(Runtime &runtime, const char* fileName)
 {
+    ClassFile *classFile = ReadModule::read_file(fileName);
+
+    runtime.classMap[classFile->get_string_constant_pool(classFile->this_class)] = nullptr;
+
+    ClassInfo *superClassInfo = nullptr;
+    
+    // Despreza super class Object
+    if( classFile->super_class != 0 && runtime.classMap.find(classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end() && classFile->get_string_constant_pool(classFile->super_class).compare("java/lang/Object") != 0)
+    {
+        superClassInfo = ExecModule::read_load_class(runtime, (classFile->get_string_constant_pool(classFile->super_class) + ".class").c_str());
+    }
+
+    ClassInfo *classInfo = load_class(classFile, superClassInfo);
+
+    runtime.classMap[classFile->get_string_constant_pool(classFile->this_class)] = classInfo;
+
+    return classInfo;
+}
+
+void ExecModule::clinit_loaded_classes(Runtime &runtime, ClassInfo *class_info)
+{
+    if (class_info->clinitiated == true)
+        return;
+    
+    for(MethodInfo &method : class_info->class_file->methods)
+    {
+        if (class_info->class_file->get_string_constant_pool(method.name_index).compare("<clinit>") == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("()V") == 0 && method.access_flags & 0x0008)
+        {
+            // Metodo <clinit> encontrado
+            runtime.stack_frames.push(Frame(class_info, method));
+            class_info->clinitiated = true;
+            break;
+        }
+    }
+
+    // Despreza super class Object
+    if (class_info->class_file->super_class != 0 && class_info->class_file->get_string_constant_pool(class_info->class_file->super_class).compare("java/lang/Object") != 0)
+        clinit_loaded_classes(runtime, runtime.classMap[class_info->class_file->get_string_constant_pool(class_info->class_file->super_class)]);
+}
+
+// TODO passar argumentos da linha de comando pro metodo main
+void ExecModule::initialize_jvm(const char *file_name)
+{
+    Runtime runtime;
+
+    ClassInfo *class_info = ExecModule::read_load_class(runtime, file_name);
+    
     MethodInfo method_main;
 
-    for (MethodInfo method : classFile.methods)
+    for (MethodInfo &method : class_info->class_file->methods)
     {
-        if (classFile.get_string_constant_complete(method.name_index).compare("main") == 0 &&
-            classFile.get_string_constant_complete(method.descriptor_index).compare("([Ljava/lang/String;)V") == 0 &&
+        if (class_info->class_file->get_string_constant_pool(method.name_index).compare("main") == 0 &&
+            class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("([Ljava/lang/String;)V") == 0 &&
             method.access_flags == 0x0009)
         {
             method_main = method;
             break;
         }
     }
-
+    
     if (method_main.access_flags != 0)
     {
-        exec_jvm(classFile, method_main);
+        runtime.stack_frames.push(Frame(class_info, method_main)); // Adiciona o metodo main como primeiro frame
+        // so vai ser executado depois de todos os metodos <clinit> necessarios serem executados.
     }
     else
     {
         printf("Método main não encontrado!\n");
+        return;
     }
+
+    ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
+
+    exec_jvm(runtime);
 }

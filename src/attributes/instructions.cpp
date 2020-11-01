@@ -159,15 +159,15 @@ void ldc(Frame &frame)
 {
     frame.pc++;
     uint8_t x = frame.code->code[frame.pc] - 1;
-    uint8_t tag = frame.class_file->constant_pool[x].tag;
+    uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Integer)
     {
-        frame.operand_stack.push(frame.class_file->constant_pool[x].get_int());
+        frame.operand_stack.push(frame.class_info->class_file->constant_pool[x].get_int());
     }
     else if (tag == CpTagConst::CONSTANT_Float)
     {
         uint32_t in;
-        float f = frame.class_file->constant_pool[x].get_float();
+        float f = frame.class_info->class_file->constant_pool[x].get_float();
         memcpy(&in, &f, sizeof(float));
         frame.operand_stack.push(in);
     }
@@ -177,15 +177,15 @@ void ldc(Frame &frame)
 void ldc_w(Frame &frame)
 {
     uint8_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    uint8_t tag = frame.class_file->constant_pool[x].tag;
+    uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Integer)
     {
-        frame.operand_stack.push(frame.class_file->constant_pool[x].get_int());
+        frame.operand_stack.push(frame.class_info->class_file->constant_pool[x].get_int());
     }
     else if (tag == CpTagConst::CONSTANT_Float)
     {
         uint32_t in;
-        float f = frame.class_file->constant_pool[x].get_float();
+        float f = frame.class_info->class_file->constant_pool[x].get_float();
         memcpy(&in, &f, sizeof(float));
         frame.operand_stack.push(in);
     }
@@ -196,17 +196,17 @@ void ldc2_w(Frame &frame)
     frame.pc++;
     uint16_t x = ((frame.code->code[frame.pc] << 8) | frame.code->code[frame.pc + 1] - 1);
     frame.pc++;
-    uint8_t tag = frame.class_file->constant_pool[x].tag;
+    uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Long)
     {
-        uint64_t ll = frame.class_file->constant_pool[x].get_long();
+        uint64_t ll = frame.class_info->class_file->constant_pool[x].get_long();
         frame.operand_stack.push(ll >> 32);
         frame.operand_stack.push(ll);
     }
     else if (tag == CpTagConst::CONSTANT_Double)
     {
         uint64_t in;
-        double f = frame.class_file->constant_pool[x].get_double();
+        double f = frame.class_info->class_file->constant_pool[x].get_double();
         memcpy(&in, &f, sizeof(double));
         frame.operand_stack.push(in >> 32);
         frame.operand_stack.push(in);
@@ -239,10 +239,7 @@ void dload(Frame &frame)
     frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1]);
 }
 
-void aload(Frame &frame)
-{
-    
-}
+void aload(Frame &frame) {}
 
 void iload_0(Frame &frame)
 {
@@ -1216,8 +1213,27 @@ void if_icmple(Frame &frame)
     }
 }
 
-void if_acmpeq(Frame &frame) {}
-void if_acmpne(Frame &frame) {}
+void if_acmpeq(Frame &frame)
+{
+    uint32_t x = get_int(frame);
+    uint32_t y = get_int(frame);
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y == x)
+    {
+        frame.pc += offset - 3;
+    }
+}
+
+void if_acmpne(Frame &frame)
+{
+    uint32_t x = get_int(frame);
+    uint32_t y = get_int(frame);
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(y != x)
+    {
+        frame.pc += offset - 3;
+    }
+}
 
 void c_goto(Frame &frame)
 {
@@ -1293,9 +1309,9 @@ void invokevirtual(Frame &frame)
     uint16_t x = ((uint16_t)frame.code->code[frame.pc]) << 8;
     frame.pc++;
     x += (uint16_t)frame.code->code[frame.pc];
-    std::string class_name = frame.class_file->get_string_constant_pool(x);
-    std::string method_name = frame.class_file->get_string_constant_pool(x, 1);
-    std::string method_desc = frame.class_file->get_string_constant_pool(x, 2);
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(x);
+    std::string method_name = frame.class_info->class_file->get_string_constant_pool(x, 1);
+    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(x, 2);
 
     // Simulação do println
     if (class_name.compare("java/io/PrintStream") == 0 && method_name.compare("println") == 0)
