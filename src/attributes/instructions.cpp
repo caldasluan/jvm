@@ -4,6 +4,8 @@
 #include <cmath>
 #include "instructions.h"
 #include "../constants/CpTagConst.h"
+#include "../model/Runtime.h"
+#include "../module/ExecModule.h"
 
 int get_int(Frame &frame)
 {
@@ -1291,14 +1293,111 @@ void c_return(Frame &frame)
     frame.pc = frame.code->code_length;
 }
 
-// ToDo implementar
+// TODO interromper a jvm e imprimir o erro.
 void getstatic(Frame &frame)
 {
-    frame.pc++;
-    frame.pc++;
+    uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
+    
+    if(class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+    {
+        frame.operand_stack.push(1);
+        return;
+    }
+
+    Runtime &runtime = Runtime::getInstance();
+
+    auto class_info_it = runtime.classMap.find(class_name);
+
+    if(class_info_it != runtime.classMap.end())
+    {
+        auto field_it = class_info_it->second->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        if(field_it != class_info_it->second->staticIndexByName.end())
+        {
+            uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
+            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticVariablesBytes + field_it->second);
+            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            {
+                uint32_t word;
+                memcpy(&word + (sizeof(uint32_t) - field_size), bytes, field_size);
+                frame.operand_stack.push(word);
+            }
+            else // campo com 8 bytes
+            {
+                frame.operand_stack.push(*(uint32_t *)(bytes + 4));
+                frame.operand_stack.push(*(uint32_t *)bytes);
+            }
+        }
+        else
+        {
+            printf("ERRO\n");
+            // Field nao encontrado. TODO interromper a jvm e imprimir o erro.
+            return;
+        }
+    }
+    else
+    {
+        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
+        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
+        return;
+    }
 }
 
-void putstatic(Frame &frame) {}
+void putstatic(Frame &frame)
+{
+    uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
+    uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
+    
+    if(class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+    {
+        frame.operand_stack.pop();
+        if(field_size == 8)
+            frame.operand_stack.pop();
+        return;
+    }
+
+    Runtime &runtime = Runtime::getInstance();
+
+    auto class_info_it = runtime.classMap.find(class_name);
+
+    if(class_info_it != runtime.classMap.end())
+    {
+        auto field_it = class_info_it->second->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        // TODO fazer as verificacoes de acesso e tipo
+        if(field_it != class_info_it->second->staticIndexByName.end())
+        {
+            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticVariablesBytes + field_it->second);
+            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            {
+                uint32_t word = frame.operand_stack.top();
+                memcpy(bytes, &word + (sizeof(uint32_t) - field_size), field_size);
+                frame.operand_stack.pop();
+            }
+            else // campo com 8 bytes
+            {
+                memcpy(bytes, &frame.operand_stack.top(), 4);
+                frame.operand_stack.pop();
+                memcpy(bytes + 4, &frame.operand_stack.top(), 4);
+                frame.operand_stack.pop();
+            }
+        }
+        else
+        {
+            printf("ERRO\n");
+            // Field nao encontrado. TODO interromper a jvm e imprimir o erro.
+            return;
+        }
+    }
+    else
+    {
+        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
+        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
+        return;
+    }
+}
+
+// ToDo implementar
 void getfield(Frame &frame) {}
 void putfield(Frame &frame) {}
 
@@ -1320,10 +1419,12 @@ void invokevirtual(Frame &frame)
         {
             printf("%c\n", frame.operand_stack.top());
             frame.operand_stack.pop();
+            frame.operand_stack.pop();
         }
         else if (method_desc.compare("(I)V") == 0)
         {
             printf("%d\n", frame.operand_stack.top());
+            frame.operand_stack.pop();
             frame.operand_stack.pop();
         }
         else if (method_desc.compare("(J)V") == 0)
@@ -1333,6 +1434,7 @@ void invokevirtual(Frame &frame)
             uint64_t b = frame.operand_stack.top();
             frame.operand_stack.pop();
             printf("%lld\n", (b << 32) + (long long)a);
+            frame.operand_stack.pop();
         }
         else if (method_desc.compare("(F)V") == 0)
         {
@@ -1341,6 +1443,7 @@ void invokevirtual(Frame &frame)
             float f;
             memcpy(&f, &a, sizeof(float));
             printf("%f\n", f);
+            frame.operand_stack.pop();
         }
         else if (method_desc.compare("(D)V") == 0)
         {
@@ -1352,6 +1455,7 @@ void invokevirtual(Frame &frame)
             double d;
             memcpy(&d, &b, sizeof(double));
             printf("%lf\n", d);
+            frame.operand_stack.pop();
         }
     }
 }

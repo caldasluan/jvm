@@ -1,5 +1,6 @@
 #include "ClassInfo.h"
 
+// TODO incluir fields de interfaces, todos os fields de interfaces sao estaticos
 ClassInfo *load_class(ClassFile *class_file, ClassInfo *super_class_info)
 {
   ClassInfo *class_info = new ClassInfo(class_file);
@@ -15,29 +16,7 @@ ClassInfo *load_class(ClassFile *class_file, ClassInfo *super_class_info)
      // Field Static
     if(fieldInfo.access_flags & 0x0008 && class_info->staticIndexByName.find(class_file->get_string_constant_pool(fieldInfo.name_index)) == class_info->staticIndexByName.end())
     {
-      switch(class_file->get_string_constant_pool(fieldInfo.descriptor_index)[0])
-      {
-        case 'B':
-        case 'C':
-        case 'Z':
-          field_size = 1;
-          break;
-        case 'S':
-          field_size = 2;
-          break;
-        case 'F':
-        case 'I':
-          field_size = 4;
-          break;
-        case 'D':
-        case 'J':
-          field_size = 8;
-          break;
-        case 'L':
-        case '[':
-          field_size = sizeof(void *);
-          break;
-      }
+      field_size = FieldInfo::field_size_bytes(class_file->get_string_constant_pool(fieldInfo.descriptor_index));
       class_info->staticIndexByName[class_file->get_string_constant_pool(fieldInfo.name_index)] = class_info->staticVariablesBytesAmmount;
       class_info->staticVariablesBytesAmmount += field_size;
     }

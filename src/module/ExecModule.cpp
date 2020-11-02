@@ -14,23 +14,25 @@ void mostra(Frame& frame) {
 
 void ExecModule::exec_jvm(Runtime &runtime) {
     while (runtime.stack_frames.size() > 0) {
-        // mostra(runtime.stack_frames.top());
-        // printf("%s.%s\n", runtime.stack_frames.top().class_info->class_file->get_string_constant_pool(runtime.stack_frames.top().class_info->class_file->this_class).c_str(), runtime.stack_frames.top().class_info->class_file->get_string_constant_pool(runtime.stack_frames.top().method->name_index).c_str());
-        instructions_mnemonics[(uint8_t)runtime.stack_frames.top().code->code[runtime.stack_frames.top().pc]].execution(runtime.stack_frames.top());
-        runtime.stack_frames.top().pc++;
-        if (runtime.stack_frames.top().pc >= runtime.stack_frames.top().code->code_length)
+        Frame &frame = runtime.stack_frames.top();
+        // mostra(frame);
+         printf("%s.%s %d %d(%s)\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, frame.code->code[frame.pc], instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
+         getchar();
+        instructions_mnemonics[frame.code->code[frame.pc]].execution(frame);
+        frame.pc++;
+        if (frame.pc >= frame.code->code_length)
         {
-            if(runtime.stack_frames.top().ret_words == 1)
+            if(frame.ret_words == 1)
             {
-                uint32_t ret = runtime.stack_frames.top().operand_stack.top();
+                uint32_t ret = frame.operand_stack.top();
                 runtime.stack_frames.pop();
                 runtime.stack_frames.top().operand_stack.push(ret);
             }
-            else if(runtime.stack_frames.top().ret_words == 2)
+            else if(frame.ret_words == 2)
             {
-                uint32_t ret1 = runtime.stack_frames.top().operand_stack.top();
-                runtime.stack_frames.top().operand_stack.pop();
-                uint32_t ret2 = runtime.stack_frames.top().operand_stack.top();
+                uint32_t ret1 = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                uint32_t ret2 = frame.operand_stack.top();
                 runtime.stack_frames.pop();
                 runtime.stack_frames.top().operand_stack.push(ret2);
                 runtime.stack_frames.top().operand_stack.push(ret1);
@@ -88,7 +90,7 @@ void ExecModule::clinit_loaded_classes(Runtime &runtime, ClassInfo *class_info)
 // TODO passar argumentos da linha de comando pro metodo main
 void ExecModule::initialize_jvm(const char *file_name)
 {
-    Runtime runtime;
+    Runtime &runtime = Runtime::getInstance();
 
     ClassInfo *class_info = ExecModule::read_load_class(runtime, file_name);
     

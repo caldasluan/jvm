@@ -13,6 +13,7 @@ public:
     static ClassInfo *read_load_class(Runtime &runtime, const char* fileName);
     static void clinit_loaded_classes(Runtime &runtime, ClassInfo *classInfo);
     static void initialize_jvm(const char *fileName);
+
 };
 
 #endif // EXEC_MODULE_H

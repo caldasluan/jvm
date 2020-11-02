@@ -15,6 +15,16 @@ public:
     std::stack<Frame> stack_frames;
     std::vector<uint8_t *> instances;
     std::map<std::string, ClassInfo *> classMap;
+
+    static Runtime& getInstance() {
+        static Runtime instance;
+        return instance;
+    }
+    
+    Runtime(Runtime const&) = delete;
+    void operator=(Runtime const&) = delete;
+private:
+    Runtime() {};
 };
 
 #endif // JVM_RUNTIME_H

@@ -13,7 +13,7 @@ inline void AttributeCode::fillAttribute(FILE *file, ClassFile* classFile)
   max_stack = u2Read(file);
   max_locals = u2Read(file);
   code_length = u4Read(file);
-  code = new char[code_length];
+  code = new uint8_t[code_length];
   fread(code, code_length, 1, file);
   exceptions_length = u2Read(file);
   exceptions.clear();
@@ -53,14 +53,14 @@ void AttributeCode::showAttribute(int offset, int index, ClassFile& classFile)
   show_attributes(offset, attributes, classFile);
 }
 
-uint8_t getU1(const char *&source)
+uint8_t getU1(const uint8_t *&source)
 {
   uint8_t target = *((uint8_t *)source);
   source += 1;
   return target;
 }
 
-uint16_t getU2(const char *&source)
+uint16_t getU2(const uint8_t *&source)
 {
   uint16_t target = *(const uint16_t *)source;
   target = __builtin_bswap16(target);
@@ -70,7 +70,7 @@ uint16_t getU2(const char *&source)
   return target;
 }
 
-uint32_t getU4(const char *&source)
+uint32_t getU4(const uint8_t *&source)
 {
   uint32_t target = *(const uint32_t *)source;
   target = __builtin_bswap32(target);
@@ -83,7 +83,7 @@ uint32_t getU4(const char *&source)
 void AttributeCode::showCode(int offset, ClassFile& classFile)
 {
   uint32_t aux1, aux2, aux3, aux4;
-  const char *codeV = code, *codeHelper;
+  const uint8_t *codeV = code, *codeHelper;
   while (codeV < code + code_length)
   {
     printf("%*s%-4d %s",

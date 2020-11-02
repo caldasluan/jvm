@@ -2,6 +2,7 @@
 #define JVM_ATTRIBUTE_CODE_H
 
 #include "../model/AttributeInfo.h"
+#include <cstdint>
 
 typedef struct
 {
@@ -21,7 +22,7 @@ public:
   uint16_t max_stack;
   uint16_t max_locals;
   uint32_t code_length;
-  char* code;
+  uint8_t* code;
   uint16_t exceptions_length;
   std::vector<exception> exceptions;
   uint16_t attribute_count;
