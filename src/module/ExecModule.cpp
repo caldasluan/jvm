@@ -54,12 +54,17 @@ ClassInfo* ExecModule::read_load_class(Runtime &runtime, const char* fileName)
     ClassInfo *superClassInfo = nullptr;
     
     // Despreza super class Object
-    if( classFile->super_class != 0 && runtime.classMap.find(classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end() && classFile->get_string_constant_pool(classFile->super_class).compare("java/lang/Object") != 0)
+    if(classFile->super_class != 0 && runtime.classMap.find(classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end() && classFile->get_string_constant_pool(classFile->super_class).compare("java/lang/Object") != 0)
     {
         superClassInfo = ExecModule::read_load_class(runtime, (classFile->get_string_constant_pool(classFile->super_class) + ".class").c_str());
     }
+    
+    for(uint16_t interface_index : classFile->interfaces)
+    {
+        ExecModule::read_load_class(runtime, (classFile->get_string_constant_pool(interface_index) + ".class").c_str());
+    }
 
-    ClassInfo *classInfo = load_class(classFile, superClassInfo);
+    ClassInfo *classInfo = load_class(classFile, superClassInfo, runtime.classMap);
 
     runtime.classMap[classFile->get_string_constant_pool(classFile->this_class)] = classInfo;
 

@@ -17,6 +17,6 @@ public:
     ClassInfo(ClassFile *_classFile) : class_file(_classFile), staticVariablesBytes(nullptr), staticVariablesBytesAmmount(0), clinitiated(false) {};
 };
 
-ClassInfo *load_class(ClassFile *classFile, ClassInfo *superClassInfo);
+ClassInfo *load_class(ClassFile *classFile, ClassInfo *superClassInfo, std::map<std::string, ClassInfo *> classMap);
 
 #endif // JVM_CLASS_INFO_H

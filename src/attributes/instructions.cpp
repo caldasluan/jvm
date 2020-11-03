@@ -50,7 +50,10 @@ void nop(Frame &frame)
     // Não fazer nada
 }
 
-void aconst_null(Frame &frame) {}
+void aconst_null(Frame &frame)
+{
+    frame.operand_stack.push(0);
+}
 
 void iconst_m1(Frame &frame)
 {
@@ -241,7 +244,10 @@ void dload(Frame &frame)
     frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc] + 1]);
 }
 
-void aload(Frame &frame) {}
+void aload(Frame &frame)
+{
+    frame.operand_stack.push(frame.local_variables[frame.code->code[++frame.pc]]);
+}
 
 void iload_0(Frame &frame)
 {
@@ -331,10 +337,26 @@ void dload_3(Frame &frame)
     frame.operand_stack.push(frame.local_variables[4]);
 }
 
-void aload_0(Frame &frame) {}
-void aload_1(Frame &frame) {}
-void aload_2(Frame &frame) {}
-void aload_3(Frame &frame) {}
+void aload_0(Frame &frame)
+{
+    frame.operand_stack.push(frame.local_variables[0]);
+}
+
+void aload_1(Frame &frame)
+{
+    frame.operand_stack.push(frame.local_variables[1]);
+}
+
+void aload_2(Frame &frame)
+{
+    frame.operand_stack.push(frame.local_variables[2]);
+}
+
+void aload_3(Frame &frame)
+{
+    frame.operand_stack.push(frame.local_variables[3]);
+}
+
 void iaload(Frame &frame) {}
 void laload(Frame &frame) {}
 void faload(Frame &frame) {}
@@ -376,7 +398,11 @@ void dstore(Frame &frame)
     frame.operand_stack.pop();
 }
 
-void astore(Frame &frame) {}
+void astore(Frame &frame)
+{
+    frame.local_variables[frame.code->code[++frame.pc]] = frame.operand_stack.top();
+    frame.operand_stack.pop();
+}
 
 void istore_0(Frame &frame)
 {
@@ -490,10 +516,30 @@ void dstore_3(Frame &frame)
     frame.operand_stack.pop();
 }
 
-void astore_0(Frame &frame) {}
-void astore_1(Frame &frame) {}
-void astore_2(Frame &frame) {}
-void astore_3(Frame &frame) {}
+void astore_0(Frame &frame)
+{
+    frame.local_variables[0] = frame.operand_stack.top();
+    frame.operand_stack.pop();
+}
+
+void astore_1(Frame &frame)
+{
+    frame.local_variables[1] = frame.operand_stack.top();
+    frame.operand_stack.pop();
+}
+
+void astore_2(Frame &frame)
+{
+    frame.local_variables[2] = frame.operand_stack.top();
+    frame.operand_stack.pop();
+}
+
+void astore_3(Frame &frame)
+{
+    frame.local_variables[3] = frame.operand_stack.top();
+    frame.operand_stack.pop();
+}
+
 void iastore(Frame &frame) {}
 void lastore(Frame &frame) {}
 void fastore(Frame &frame) {}
@@ -1254,9 +1300,55 @@ void ret(Frame &frame)
     frame.pc = frame.local_variables[frame.code->code[++frame.pc]] - 1;
 }
 
-// TODO switchs
-void tableswitch(Frame &frame) {}
-void lookupswitch(Frame &frame) {}
+// TODO testar
+void tableswitch(Frame &frame)
+{
+    uint32_t instruction_pc = frame.pc;
+    frame.pc = (frame.pc + 3) % 4;
+    int32_t def = *(int32_t *)(frame.code->code + frame.pc);
+    int32_t low = *(int32_t *)(frame.code->code + frame.pc + 4);
+    int32_t high = *(int32_t *)(frame.code->code + frame.pc + 8);
+    frame.pc += 12;
+    int32_t index = get_int(frame);
+    if(index < low || index > high)
+    {
+        frame.pc = instruction_pc + def;
+        return;
+    }
+
+    frame.pc = instruction_pc + *(int32_t *)(frame.code->code + frame.pc + (index - low) * 4);
+}
+
+// TODO testar
+void lookupswitch(Frame &frame)
+{
+    uint32_t instruction_pc = frame.pc;
+    frame.pc = (frame.pc + 3) % 4;
+    int32_t def = *(int32_t *)(frame.code->code + frame.pc), npairs = *(int32_t *)(frame.code->code + frame.pc + 4);
+    frame.pc += 8;
+    int32_t key = get_int(frame);
+    uint8_t *curCode = frame.code->code + frame.pc;
+    int32_t low = 0, high = npairs, mid;
+    while(low < high)
+    {
+        mid = (high - low) / 2;
+        if(*(int32_t *)(curCode + mid * 8) > key)
+        {
+            high = mid - 1;
+        }
+        else if(*(int32_t *)(curCode + mid * 8) < key)
+        {
+            low = mid + 1;
+        }
+        else
+        {
+            frame.pc = instruction_pc + *(int32_t *)(curCode + mid * 8 + 4);
+            return;
+        }
+    }
+
+    frame.pc = instruction_pc + def;
+}
 
 void ireturn(Frame &frame)
 {
@@ -1477,24 +1569,24 @@ void monitorexit(Frame &frame) {}
 void wide(Frame &frame)
 {
     uint8_t opcode = frame.code->code[++frame.pc];
-    if(opcode == 0x84)
+    if(opcode == 0x84) // IINC
     {
         uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
         int32_t add = (int32_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index] = (int32_t)(frame.local_variables[index]) + add;
     }
-    else if(opcode == 0x16 || opcode == 0x18)
+    else if(opcode == 0x16 || opcode == 0x18) // LLOAD DLOAD
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.operand_stack.push(frame.local_variables[index]);
         frame.operand_stack.push(frame.local_variables[index + 1]);
     }
-    else if(opcode == 0x15 || opcode == 0x17 || opcode == 0x19)
+    else if(opcode == 0x15 || opcode == 0x17 || opcode == 0x19) // ILOAD FLOAD ALOAD
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.operand_stack.push(frame.local_variables[index]);
     }
-    else if(opcode == 0x37 || opcode == 0x39)
+    else if(opcode == 0x37 || opcode == 0x39) // LSTORE DSTORE
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index + 1] = frame.operand_stack.top();
@@ -1502,12 +1594,12 @@ void wide(Frame &frame)
         frame.local_variables[index] = frame.operand_stack.top();
         frame.operand_stack.pop();
     }
-    else if(opcode == 0xa9)
+    else if(opcode == 0xa9) // RET
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.pc = frame.local_variables[index] - 1;
     }
-    else
+    else// if(opcode == 0x36 || opcode == 0x38 || opcode == 0x3a) // ISTORE FSTORE ASTORE
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index] = frame.operand_stack.top();
