@@ -9,12 +9,14 @@
 class ClassInfo {
 public:
     ClassFile *class_file;
-    uint16_t staticVariablesBytesAmmount;
-    uint8_t *staticVariablesBytes;
+    uint32_t fieldBytesAmmount;
+    uint32_t staticBytesAmmount;
+    uint8_t *staticBytes;
     bool clinitiated;
-    std::map<std::string, uint16_t> staticIndexByName;
+    std::map<std::string, uint32_t> staticIndexByName;
+    std::map<std::string, uint32_t> fieldIndexByName;
 
-    ClassInfo(ClassFile *_classFile) : class_file(_classFile), staticVariablesBytes(nullptr), staticVariablesBytesAmmount(0), clinitiated(false) {};
+    ClassInfo(ClassFile *_classFile) : class_file(_classFile), staticBytes(nullptr), staticBytesAmmount(0), fieldBytesAmmount(0), clinitiated(false) {};
 };
 
 ClassInfo *load_class(ClassFile *classFile, ClassInfo *superClassInfo, std::map<std::string, ClassInfo *> classMap);

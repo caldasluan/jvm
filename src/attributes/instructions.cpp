@@ -45,10 +45,7 @@ double get_double(Frame &frame)
 
 // Início das instruções
 
-void nop(Frame &frame)
-{
-    // Não fazer nada
-}
+void nop(Frame &frame) {} // Não fazer nada
 
 void aconst_null(Frame &frame)
 {
@@ -1333,13 +1330,9 @@ void lookupswitch(Frame &frame)
     {
         mid = (high - low) / 2;
         if(*(int32_t *)(curCode + mid * 8) > key)
-        {
             high = mid - 1;
-        }
         else if(*(int32_t *)(curCode + mid * 8) < key)
-        {
             low = mid + 1;
-        }
         else
         {
             frame.pc = instruction_pc + *(int32_t *)(curCode + mid * 8 + 4);
@@ -1407,7 +1400,7 @@ void getstatic(Frame &frame)
         if(field_it != class_info_it->second->staticIndexByName.end())
         {
             uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticVariablesBytes + field_it->second);
+            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticBytes + field_it->second);
             if(field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word;
@@ -1459,7 +1452,7 @@ void putstatic(Frame &frame)
         // TODO fazer as verificacoes de acesso e tipo
         if(field_it != class_info_it->second->staticIndexByName.end())
         {
-            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticVariablesBytes + field_it->second);
+            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticBytes + field_it->second);
             if(field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word = frame.operand_stack.top();
@@ -1556,7 +1549,39 @@ void invokespecial(Frame &frame) {}
 void invokestatic(Frame &frame) {}
 void invokeinterface(Frame &frame) {}
 void invokedynamic(Frame &frame) {}
-void c_new(Frame &frame) {}
+
+void c_new(Frame &frame)
+{
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
+
+    Runtime &runtime = Runtime::getInstance();
+
+    if(class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
+    {
+        frame.operand_stack.push(0); // Objetos de classas do proprio java devem ser ignorados?
+        return;
+    }
+
+    auto it = runtime.classMap.find(class_name);
+
+    if(it != runtime.classMap.end())
+    {
+        frame.operand_stack.push(runtime.instances.size());
+        if(it->second->fieldBytesAmmount > 0)
+            runtime.instances.push_back(new uint8_t[it->second->fieldBytesAmmount]{0});
+        else
+            runtime.instances.push_back(nullptr); // TODO Isso ta certo? Eh melhor nao adicionar nada?
+            //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
+    }
+    else
+    {
+        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
+        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
+    }
+}
+
 void newarray(Frame &frame) {}
 void anewarray(Frame &frame) {}
 void arraylength(Frame &frame) {}
