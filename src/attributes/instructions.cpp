@@ -1188,74 +1188,52 @@ void if_icmpeq(Frame &frame)
     int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y == x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_icmpne(Frame &frame)
 {
-    int32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    int32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y != x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_icmplt(Frame &frame)
 {
-    int32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    int32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y < x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_icmpge(Frame &frame)
 {
-    int32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    int32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y >= x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_icmpgt(Frame &frame)
 {
-    int32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    int32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y > x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_icmple(Frame &frame)
 {
-    int32_t x = frame.operand_stack.top();
-    frame.operand_stack.pop();
-    int32_t y = frame.operand_stack.top();
-    frame.operand_stack.pop();
+    int32_t x = get_int(frame);
+    int32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y <= x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_acmpeq(Frame &frame)
@@ -1264,9 +1242,7 @@ void if_acmpeq(Frame &frame)
     uint32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y == x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void if_acmpne(Frame &frame)
@@ -1275,9 +1251,7 @@ void if_acmpne(Frame &frame)
     uint32_t y = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     if(y != x)
-    {
         frame.pc += offset - 3;
-    }
 }
 
 void c_goto(Frame &frame)
@@ -1383,24 +1357,26 @@ void getstatic(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
+    uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
     
     if(class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
     {
-        frame.operand_stack.push(1);
+        frame.operand_stack.push(0);
+        if(field_size == 8)
+            frame.operand_stack.push(0);
         return;
     }
 
     Runtime &runtime = Runtime::getInstance();
 
-    auto class_info_it = runtime.classMap.find(class_name);
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-    if(class_info_it != runtime.classMap.end())
+    if(class_info != nullptr)
     {
-        auto field_it = class_info_it->second->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
-        if(field_it != class_info_it->second->staticIndexByName.end())
+        auto field_it = class_info->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        if(field_it != class_info->staticIndexByName.end())
         {
-            uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticBytes + field_it->second);
+            uint8_t *bytes = (uint8_t *)(class_info->staticBytes + field_it->second);
             if(field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word;
@@ -1421,11 +1397,7 @@ void getstatic(Frame &frame)
         }
     }
     else
-    {
-        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
         frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
-        return;
-    }
 }
 
 void putstatic(Frame &frame)
@@ -1444,15 +1416,15 @@ void putstatic(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
-    auto class_info_it = runtime.classMap.find(class_name);
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-    if(class_info_it != runtime.classMap.end())
+    if(class_info != nullptr)
     {
-        auto field_it = class_info_it->second->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        auto field_it = class_info->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
         // TODO fazer as verificacoes de acesso e tipo
-        if(field_it != class_info_it->second->staticIndexByName.end())
+        if(field_it != class_info->staticIndexByName.end())
         {
-            uint8_t *bytes = (uint8_t *)(class_info_it->second->staticBytes + field_it->second);
+            uint8_t *bytes = (uint8_t *)(class_info->staticBytes + field_it->second);
             if(field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word = frame.operand_stack.top();
@@ -1475,74 +1447,219 @@ void putstatic(Frame &frame)
         }
     }
     else
-    {
-        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
         frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
-        return;
-    }
 }
 
-// ToDo implementar
-void getfield(Frame &frame) {}
-void putfield(Frame &frame) {}
+// TODO testar
+void getfield(Frame &frame)
+{
+    uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint32_t reference = get_int(frame);
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
+    uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
+    
+    // TODO adicionar verificacoes pra classes nativas, tem que ignorar elas?
 
-// ToDo terminar método, corrigir char
+    Runtime &runtime = Runtime::getInstance();
+
+    // TODO o nome da classe eh REALMENTE o nome que deve ser acessado? Parece ter casos que NAO.
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+
+
+    if(class_info != nullptr)
+    {
+        auto field_it = class_info->fieldIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        if(field_it != class_info->fieldIndexByName.end())
+        {
+            // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
+            uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
+            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            {
+                uint32_t word;
+                memcpy(&word + (sizeof(uint32_t) - field_size), bytes, field_size);
+                frame.operand_stack.push(word);
+            }
+            else // campo com 8 bytes
+            {
+                frame.operand_stack.push(*(uint32_t *)(bytes + 4));
+                frame.operand_stack.push(*(uint32_t *)bytes);
+            }
+        }
+        else
+        {
+            printf("ERRO\n");
+            // Field nao encontrado. TODO interromper a jvm e imprimir o erro.
+            return;
+        }
+    }
+    else
+        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
+}
+
+// TODO testar
+void putfield(Frame &frame)
+{
+    uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint32_t reference = get_int(frame);
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
+    uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
+    
+    // TODO adicionar verificacoes pra classes nativas, tem que ignorar elas?
+
+    Runtime &runtime = Runtime::getInstance();
+
+    // TODO o nome da classe eh REALMENTE o nome que deve ser acessado? Parece ter casos que NAO.
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+
+    if(class_info != nullptr)
+    {
+        auto field_it = class_info->fieldIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
+        if(field_it != class_info->fieldIndexByName.end())
+        {
+            // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
+            uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
+            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            {
+                uint32_t word = frame.operand_stack.top();
+                memcpy(bytes, &word + (sizeof(uint32_t) - field_size), field_size);
+                frame.operand_stack.pop();
+            }
+            else // campo com 8 bytes
+            {
+                memcpy(bytes, &frame.operand_stack.top(), 4);
+                frame.operand_stack.pop();
+                memcpy(bytes + 4, &frame.operand_stack.top(), 4);
+                frame.operand_stack.pop();
+            }
+        }
+        else
+        {
+            printf("ERRO\n");
+            // Field nao encontrado. TODO interromper a jvm e imprimir o erro.
+            return;
+        }
+    }
+    else
+        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
+}
+
+// ToDo corrigir char
+// TODO implementar regras de acesso
+// TODO implementar busca em superclasses e interfaces(fudeu)
+// TODO implementar threading? (precisa?)
+// TODO testar
 void invokevirtual(Frame &frame)
 {
-    frame.pc++;
-    uint16_t x = ((uint16_t)frame.code->code[frame.pc]) << 8;
-    frame.pc++;
-    x += (uint16_t)frame.code->code[frame.pc];
+    uint16_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(x);
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(x, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(x, 2);
 
     // Simulação do println
-    if (class_name.compare("java/io/PrintStream") == 0 && method_name.compare("println") == 0)
+    // Talvez haja outras funcoes que devam ser tratadas(print?)
+    if (class_name.compare("java/io/PrintStream") == 0)
     {
-        if (method_desc.compare("(C)V") == 0)
+        if(method_name.compare("println") == 0)
         {
-            printf("%c\n", frame.operand_stack.top());
-            frame.operand_stack.pop();
-            frame.operand_stack.pop();
-        }
-        else if (method_desc.compare("(I)V") == 0)
-        {
-            printf("%d\n", frame.operand_stack.top());
-            frame.operand_stack.pop();
-            frame.operand_stack.pop();
-        }
-        else if (method_desc.compare("(J)V") == 0)
-        {
-            uint32_t a = frame.operand_stack.top();
-            frame.operand_stack.pop();
-            uint64_t b = frame.operand_stack.top();
-            frame.operand_stack.pop();
-            printf("%lld\n", (b << 32) + (long long)a);
-            frame.operand_stack.pop();
-        }
-        else if (method_desc.compare("(F)V") == 0)
-        {
-            uint32_t a = frame.operand_stack.top();
-            frame.operand_stack.pop();
-            float f;
-            memcpy(&f, &a, sizeof(float));
-            printf("%f\n", f);
-            frame.operand_stack.pop();
-        }
-        else if (method_desc.compare("(D)V") == 0)
-        {
-            uint64_t a = frame.operand_stack.top();
-            frame.operand_stack.pop();
-            uint64_t b = frame.operand_stack.top();
-            frame.operand_stack.pop();
-            b = (b << 32) | a;
-            double d;
-            memcpy(&d, &b, sizeof(double));
-            printf("%lf\n", d);
-            frame.operand_stack.pop();
+            if (method_desc.compare("(C)V") == 0)
+            {
+                printf("%c\n", frame.operand_stack.top());
+                frame.operand_stack.pop();
+                frame.operand_stack.pop();
+            }
+            else if (method_desc.compare("(I)V") == 0)
+            {
+                printf("%d\n", frame.operand_stack.top());
+                frame.operand_stack.pop();
+                frame.operand_stack.pop();
+            }
+            else if (method_desc.compare("(J)V") == 0)
+            {
+                uint32_t a = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                uint64_t b = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                printf("%lld\n", (b << 32) + (long long)a);
+                frame.operand_stack.pop();
+            }
+            else if (method_desc.compare("(F)V") == 0)
+            {
+                uint32_t a = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                float f;
+                memcpy(&f, &a, sizeof(float));
+                printf("%f\n", f);
+                frame.operand_stack.pop();
+            }
+            else if (method_desc.compare("(D)V") == 0)
+            {
+                uint64_t a = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                uint64_t b = frame.operand_stack.top();
+                frame.operand_stack.pop();
+                b = (b << 32) | a;
+                double d;
+                memcpy(&d, &b, sizeof(double));
+                printf("%lf\n", d);
+                frame.operand_stack.pop();
+            }
+            else
+                printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
+            return;
         }
     }
+    else if(class_name.compare("java/util/Scanner") == 0)
+    {
+        // Sla? Tem que simular entrada tambem?
+        return;
+    }
+
+    printf("%s\n",class_name.c_str());
+    Runtime &runtime = Runtime::getInstance();
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+    if(class_info != nullptr)
+    {
+        for(MethodInfo &method : class_info->class_file->methods)
+        {
+            if(class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0)
+            {
+                std::vector<uint32_t> args;
+                int index = 0;
+                for(int i = 1; method_desc[i] != ')'; i++, index++)
+                {
+                    if(method_desc[i] == 'L')
+                    {
+                        args.push_back(get_int(frame));
+                        while(method_desc[++i]!=';');
+                    }
+                    else if(method_desc[i] == '[')
+                    {
+                        args.push_back(get_int(frame));
+                        while(method_desc[++i]=='[');
+                        if(method_desc[i] == 'L')
+                            while(method_desc[++i]!=';');
+                        else
+                            i++;
+                    }
+                    else if(method_desc[i] == 'D' || method_desc[i] == 'J')
+                    {
+                        args.push_back(get_int(frame));
+                        args.push_back(get_int(frame));
+                    }
+                    else
+                        args.push_back(get_int(frame));
+                }
+                args.push_back(get_int(frame));
+                runtime.stack_frames.push(Frame(class_info, method));
+
+                for(;index >= 0;index--)
+                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+            }
+        }
+    }
+    else
+        frame.pc -= 3;
 }
 
 void invokespecial(Frame &frame) {}
@@ -1560,31 +1677,85 @@ void c_new(Frame &frame)
 
     if(class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
     {
-        frame.operand_stack.push(0); // Objetos de classas do proprio java devem ser ignorados?
+        frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
         return;
     }
 
-    auto it = runtime.classMap.find(class_name);
-
-    if(it != runtime.classMap.end())
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+    if(class_info != nullptr)
     {
         frame.operand_stack.push(runtime.instances.size());
-        if(it->second->fieldBytesAmmount > 0)
-            runtime.instances.push_back(new uint8_t[it->second->fieldBytesAmmount]{0});
+        if(class_info->fieldBytesAmmount > 0)
+            runtime.instances.push_back(new uint8_t[class_info->fieldBytesAmmount]{0});
         else
             runtime.instances.push_back(nullptr); // TODO Isso ta certo? Eh melhor nao adicionar nada?
             //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
     }
     else
-    {
-        ExecModule::clinit_loaded_classes(runtime, ExecModule::read_load_class(runtime, (class_name + ".class").c_str()));
-        frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
-    }
+        frame.pc -= 3;
 }
 
-void newarray(Frame &frame) {}
-void anewarray(Frame &frame) {}
-void arraylength(Frame &frame) {}
+// TODO testar
+void newarray(Frame &frame)
+{
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t type = frame.code->code[++frame.pc];
+    uint32_t count = get_int(frame);
+    uint8_t size;
+    switch(type)
+    {
+        case 4: // Boolean
+        case 5: // Char
+        case 8: // Byte
+            size = 1;
+            break;
+        case 9: // Short
+            size = 2;
+            break;
+        case 6: // Float
+        case 10: // Int
+            size = 4;
+            break;
+        case 7: // Double
+        case 11: // Long
+            size = 8;
+            break;
+    }
+
+    array_t *ar = new array_t;
+    ar->size = size;
+    ar->bytes = new uint8_t[count * size]{0};
+
+    frame.operand_stack.push(runtime.instances.size());
+    runtime.instances.push_back((uint8_t*)ar);
+}
+
+// TODO testar
+void anewarray(Frame &frame)
+{
+    Runtime &runtime = Runtime::getInstance();
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    
+    ExecModule::prepare_class(runtime, frame.class_info->class_file->get_string_constant_pool(index));
+    
+    uint32_t count = get_int(frame);
+    array_t *ar = new array_t;
+    ar->size = count;
+    ar->bytes = new uint8_t[count * sizeof(void*)]{0};
+
+    frame.operand_stack.push(runtime.instances.size());
+    runtime.instances.push_back((uint8_t*)ar);
+}
+
+// TODO testar
+void arraylength(Frame &frame)
+{
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t reference = get_int(frame);
+    
+    frame.operand_stack.push(((array_t *)runtime.instances[reference])->size);
+}
+
 void athrow(Frame &frame) {}
 void checkcast(Frame &frame) {}
 void instanceof (Frame & frame) {}
@@ -1633,9 +1804,24 @@ void wide(Frame &frame)
     
 }
 
+// TODO implementar iso
 void multianewarray(Frame &frame) {}
-void ifnull(Frame &frame) {}
-void ifnonnull(Frame &frame) {}
+
+void ifnull(Frame &frame)
+{
+    uint32_t value = get_int(frame);
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(value == 0) // Indice considerado como NULL
+        frame.pc += offset - 3;
+}
+
+void ifnonnull(Frame &frame)
+{
+    uint32_t value = get_int(frame);
+    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    if(value != 0) // Indice considerado como NULL
+        frame.pc += offset - 3;
+}
 
 void goto_w(Frame &frame)
 {

@@ -17,9 +17,10 @@ void ExecModule::exec_jvm(Runtime &runtime) {
         Frame &frame = runtime.stack_frames.top();
         // mostra(frame);
         printf("%s.%s %d %d(%s)\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, frame.code->code[frame.pc], instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
-        getchar();
+        //getchar();
         instructions_mnemonics[frame.code->code[frame.pc]].execution(frame);
         frame.pc++;
+
         if (frame.pc >= frame.code->code_length)
         {
             if(frame.ret_words == 1)
@@ -41,6 +42,21 @@ void ExecModule::exec_jvm(Runtime &runtime) {
                 runtime.stack_frames.pop();
         }
     }
+}
+
+ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
+{
+    auto it = runtime.classMap.find(fileName);
+    if(it == runtime.classMap.end())
+    {
+        uint32_t size = runtime.stack_frames.size();
+        ClassInfo *class_info = read_load_class(runtime, (fileName + ".class").c_str());
+        clinit_loaded_classes(runtime, class_info);
+        if(size == runtime.stack_frames.size()) // Caso nao tenha sido adicionado nenhum frame com metodo <clinit>
+            return class_info;
+        return nullptr;
+    }
+    return it->second;
 }
 
 //TODO fazer a classe Object ser carregavel, nao faco ideia de como fazer isso ainda

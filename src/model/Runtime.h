@@ -24,7 +24,10 @@ public:
     Runtime(Runtime const&) = delete;
     void operator=(Runtime const&) = delete;
 private:
-    Runtime() {};
+    Runtime()
+    {
+        instances.push_back(0); // NULL reference.
+    };
 };
 
 #endif // JVM_RUNTIME_H

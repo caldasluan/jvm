@@ -2,6 +2,7 @@
 #include "module/DisplayModule.h"
 #include "module/ExecModule.h"
 
+// JVM tem que passar argumentos pela linha de comando pro programa executado.
 int main(int argc, char *argv[])
 {
     if(argc > 1 && argc <= 3) {

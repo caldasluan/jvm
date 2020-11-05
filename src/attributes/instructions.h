@@ -528,4 +528,9 @@ const uint64_t mask_shift[] = {
     0xFFFFFFFFFFFFFFFF,
 };
 
+typedef struct {
+    uint8_t *bytes;
+    uint32_t size;
+} array_t;
+
 #endif // JVM_INSTRUCTIONS_H
