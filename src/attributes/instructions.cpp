@@ -1,3 +1,4 @@
+
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -146,7 +147,7 @@ void dconst_1(Frame &frame)
 void bipush(Frame &frame)
 {
     frame.pc++;
-    frame.operand_stack.push((uint32_t)frame.code->code[frame.pc]);
+    frame.operand_stack.push((int8_t)frame.code->code[frame.pc]);
 }
 
 void sipush(Frame &frame)
@@ -172,6 +173,18 @@ void ldc(Frame &frame)
         float f = frame.class_info->class_file->constant_pool[x].get_float();
         memcpy(&in, &f, sizeof(float));
         frame.operand_stack.push(in);
+    }
+    else if (tag == CpTagConst::CONSTANT_String)
+    {
+        std::string ss = frame.class_info->class_file->get_string_constant_pool(x + 1);
+        uint8_t *caracters = new uint8_t[ss.length() + 1]{0};
+        for (int i = 0; i < ss.length() + 1; i++)
+        {
+            caracters[i] = ss.c_str()[i];
+        }
+        Runtime &runtime = Runtime::getInstance();
+        frame.operand_stack.push(runtime.instances.size());
+        runtime.instances.push_back(caracters);
     }
 }
 
@@ -354,14 +367,125 @@ void aload_3(Frame &frame)
     frame.operand_stack.push(frame.local_variables[3]);
 }
 
-void iaload(Frame &frame) {}
-void laload(Frame &frame) {}
-void faload(Frame &frame) {}
-void daload(Frame &frame) {}
-void aaload(Frame &frame) {}
-void baload(Frame &frame) {}
-void caload(Frame &frame) {}
-void saload(Frame &frame) {}
+void iaload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((uint32_t)vetor[index * size]) << 24) |
+                             (((uint32_t)vetor[index * size + 1]) << 16) |
+                             (((uint32_t)vetor[index * size + 2]) << 8) |
+                             ((uint32_t)vetor[index * size + 3]));
+}
+
+void laload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((uint32_t)vetor[index * size]) << 24) |
+                             (((uint32_t)vetor[index * size + 1]) << 16) |
+                             (((uint32_t)vetor[index * size + 2]) << 8) |
+                             ((uint32_t)vetor[index * size + 3]));
+    frame.operand_stack.push((((uint32_t)vetor[index * size + 4]) << 24) |
+                             (((uint32_t)vetor[index * size + 5]) << 16) |
+                             (((uint32_t)vetor[index * size + 6]) << 8) |
+                             ((uint32_t)vetor[index * size + 7]));
+}
+
+void faload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((uint32_t)vetor[index * size]) << 24) |
+                             (((uint32_t)vetor[index * size + 1]) << 16) |
+                             (((uint32_t)vetor[index * size + 2]) << 8) |
+                             ((uint32_t)vetor[index * size + 3]));
+}
+
+void daload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((uint32_t)vetor[index * size]) << 24) |
+                             (((uint32_t)vetor[index * size + 1]) << 16) |
+                             (((uint32_t)vetor[index * size + 2]) << 8) |
+                             ((uint32_t)vetor[index * size + 3]));
+    frame.operand_stack.push((((uint32_t)vetor[index * size + 4]) << 24) |
+                             (((uint32_t)vetor[index * size + 5]) << 16) |
+                             (((uint32_t)vetor[index * size + 6]) << 8) |
+                             ((uint32_t)vetor[index * size + 7]));
+}
+
+void aaload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((uint32_t)vetor[index * size]) << 24) |
+                             (((uint32_t)vetor[index * size + 1]) << 16) |
+                             (((uint32_t)vetor[index * size + 2]) << 8) |
+                             ((uint32_t)vetor[index * size + 3]));
+}
+
+void baload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((int32_t)(int8_t)vetor[index * size]);
+}
+
+void caload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push(vetor[index * size]);
+}
+
+void saload(Frame &frame)
+{
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    frame.operand_stack.push((((int32_t)(int8_t)vetor[index * size]) << 8) |
+                             ((uint32_t)vetor[index * size + 1]));
+}
 
 void istore(Frame &frame)
 {
@@ -421,7 +545,7 @@ void istore_2(Frame &frame)
 
 void istore_3(Frame &frame)
 {
-    frame.local_variables[1] = frame.operand_stack.top();
+    frame.local_variables[3] = frame.operand_stack.top();
     frame.operand_stack.pop();
 }
 
@@ -537,14 +661,133 @@ void astore_3(Frame &frame)
     frame.operand_stack.pop();
 }
 
-void iastore(Frame &frame) {}
-void lastore(Frame &frame) {}
-void fastore(Frame &frame) {}
-void dastore(Frame &frame) {}
-void aastore(Frame &frame) {}
-void bastore(Frame &frame) {}
-void castore(Frame &frame) {}
-void sastore(Frame &frame) {}
+void iastore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 24;
+    vetor[index * size + 1] = value >> 16;
+    vetor[index * size + 2] = value >> 8;
+    vetor[index * size + 3] = value;
+}
+
+void lastore(Frame &frame)
+{
+    long long value = get_long(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 56;
+    vetor[index * size + 1] = value >> 48;
+    vetor[index * size + 2] = value >> 40;
+    vetor[index * size + 3] = value >> 32;
+    vetor[index * size + 4] = value >> 24;
+    vetor[index * size + 5] = value >> 16;
+    vetor[index * size + 6] = value >> 8;
+    vetor[index * size + 7] = value;
+}
+
+void fastore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 24;
+    vetor[index * size + 1] = value >> 16;
+    vetor[index * size + 2] = value >> 8;
+    vetor[index * size + 3] = value;
+}
+
+void dastore(Frame &frame)
+{
+    long long value = get_long(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 56;
+    vetor[index * size + 1] = value >> 48;
+    vetor[index * size + 2] = value >> 40;
+    vetor[index * size + 3] = value >> 32;
+    vetor[index * size + 4] = value >> 24;
+    vetor[index * size + 5] = value >> 16;
+    vetor[index * size + 6] = value >> 8;
+    vetor[index * size + 7] = value;
+}
+
+void aastore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 24;
+    vetor[index * size + 1] = value >> 16;
+    vetor[index * size + 2] = value >> 8;
+    vetor[index * size + 3] = value;
+}
+
+void bastore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value;
+}
+
+void castore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value;
+}
+
+void sastore(Frame &frame)
+{
+    int value = get_int(frame);
+    int index = get_int(frame);
+    int reference = get_int(frame);
+
+    Runtime &runtime = Runtime::getInstance();
+    uint8_t *vetor = ((array_t *)runtime.instances[reference])->bytes;
+    uint32_t size = ((array_t *)runtime.instances[reference])->size;
+
+    vetor[index * size] = value >> 8;
+    vetor[index * size + 1] = value;
+}
 
 void pop(Frame &frame)
 {
@@ -893,15 +1136,17 @@ void lshr(Frame &frame)
     frame.operand_stack.push(y);
 }
 
-void iushr(Frame &frame) {
-    
+void iushr(Frame &frame)
+{
+
     int x = get_int(frame) & 0x1F;
     int y = get_int(frame);
     uint64_t mask = ~mask_shift[x + 32];
     frame.operand_stack.push((y >> x) & mask);
 }
 
-void lushr(Frame &frame) {
+void lushr(Frame &frame)
+{
     int x = get_int(frame) & 0x3F;
     long long y = get_long(frame);
     uint64_t mask = ~mask_shift[x];
@@ -961,7 +1206,7 @@ void lxor(Frame &frame)
 void iinc(Frame &frame)
 {
     uint16_t index = frame.code->code[++frame.pc];
-    int32_t add = (int32_t)(frame.code->code[++frame.pc]);
+    int32_t add = (int32_t)(int8_t)(frame.code->code[++frame.pc]);
     frame.local_variables[index] = (int32_t)(frame.local_variables[index]) + add;
 }
 
@@ -989,7 +1234,8 @@ void i2d(Frame &frame)
     frame.operand_stack.push(y);
 }
 
-void l2i(Frame &frame) {
+void l2i(Frame &frame)
+{
     frame.operand_stack.push((int)get_long(frame));
 }
 
@@ -1067,8 +1313,9 @@ void i2c(Frame &frame)
     frame.operand_stack.push(get_int(frame) & 0x0000FFFF);
 }
 
-void i2s(Frame &frame) {
-    frame.operand_stack.push(get_int(frame) & 0x0000FFFF);
+void i2s(Frame &frame)
+{
+    frame.operand_stack.push((int16_t)get_int(frame));
 }
 
 void lcmp(Frame &frame)
@@ -1183,11 +1430,11 @@ void ifle(Frame &frame)
 }
 
 void if_icmpeq(Frame &frame)
-{   
+{
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y == x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y == x)
         frame.pc += offset - 3;
 }
 
@@ -1195,8 +1442,8 @@ void if_icmpne(Frame &frame)
 {
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y != x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y != x)
         frame.pc += offset - 3;
 }
 
@@ -1204,8 +1451,8 @@ void if_icmplt(Frame &frame)
 {
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y < x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y < x)
         frame.pc += offset - 3;
 }
 
@@ -1213,8 +1460,8 @@ void if_icmpge(Frame &frame)
 {
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y >= x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y >= x)
         frame.pc += offset - 3;
 }
 
@@ -1222,8 +1469,8 @@ void if_icmpgt(Frame &frame)
 {
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y > x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y > x)
         frame.pc += offset - 3;
 }
 
@@ -1231,8 +1478,8 @@ void if_icmple(Frame &frame)
 {
     int32_t x = get_int(frame);
     int32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y <= x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y <= x)
         frame.pc += offset - 3;
 }
 
@@ -1240,8 +1487,8 @@ void if_acmpeq(Frame &frame)
 {
     uint32_t x = get_int(frame);
     uint32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y == x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y == x)
         frame.pc += offset - 3;
 }
 
@@ -1249,14 +1496,14 @@ void if_acmpne(Frame &frame)
 {
     uint32_t x = get_int(frame);
     uint32_t y = get_int(frame);
-    int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(y != x)
+    int32_t offset = (int16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
+    if (y != x)
         frame.pc += offset - 3;
 }
 
 void c_goto(Frame &frame)
 {
-    frame.pc += (int32_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]) - 3;
+    frame.pc += ((((int32_t)(int8_t)frame.code->code[++frame.pc]) << 8) | frame.code->code[++frame.pc]) - 3;
 }
 
 void jsr(Frame &frame)
@@ -1281,7 +1528,7 @@ void tableswitch(Frame &frame)
     int32_t high = *(int32_t *)(frame.code->code + frame.pc + 8);
     frame.pc += 12;
     int32_t index = get_int(frame);
-    if(index < low || index > high)
+    if (index < low || index > high)
     {
         frame.pc = instruction_pc + def;
         return;
@@ -1300,12 +1547,12 @@ void lookupswitch(Frame &frame)
     int32_t key = get_int(frame);
     uint8_t *curCode = frame.code->code + frame.pc;
     int32_t low = 0, high = npairs, mid;
-    while(low < high)
+    while (low < high)
     {
         mid = (high - low) / 2;
-        if(*(int32_t *)(curCode + mid * 8) > key)
+        if (*(int32_t *)(curCode + mid * 8) > key)
             high = mid - 1;
-        else if(*(int32_t *)(curCode + mid * 8) < key)
+        else if (*(int32_t *)(curCode + mid * 8) < key)
             low = mid + 1;
         else
         {
@@ -1358,11 +1605,11 @@ void getstatic(Frame &frame)
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-    
-    if(class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+
+    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
     {
         frame.operand_stack.push(0);
-        if(field_size == 8)
+        if (field_size == 8)
             frame.operand_stack.push(0);
         return;
     }
@@ -1371,13 +1618,13 @@ void getstatic(Frame &frame)
 
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
         auto field_it = class_info->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
-        if(field_it != class_info->staticIndexByName.end())
+        if (field_it != class_info->staticIndexByName.end())
         {
             uint8_t *bytes = (uint8_t *)(class_info->staticBytes + field_it->second);
-            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word;
                 memcpy(&word + (sizeof(uint32_t) - field_size), bytes, field_size);
@@ -1405,11 +1652,11 @@ void putstatic(Frame &frame)
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-    
-    if(class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+
+    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
     {
         frame.operand_stack.pop();
-        if(field_size == 8)
+        if (field_size == 8)
             frame.operand_stack.pop();
         return;
     }
@@ -1418,14 +1665,14 @@ void putstatic(Frame &frame)
 
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
         auto field_it = class_info->staticIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
         // TODO fazer as verificacoes de acesso e tipo
-        if(field_it != class_info->staticIndexByName.end())
+        if (field_it != class_info->staticIndexByName.end())
         {
             uint8_t *bytes = (uint8_t *)(class_info->staticBytes + field_it->second);
-            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word = frame.operand_stack.top();
                 memcpy(bytes, &word + (sizeof(uint32_t) - field_size), field_size);
@@ -1457,7 +1704,7 @@ void getfield(Frame &frame)
     uint32_t reference = get_int(frame);
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-    
+
     // TODO adicionar verificacoes pra classes nativas, tem que ignorar elas?
 
     Runtime &runtime = Runtime::getInstance();
@@ -1465,15 +1712,14 @@ void getfield(Frame &frame)
     // TODO o nome da classe eh REALMENTE o nome que deve ser acessado? Parece ter casos que NAO.
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
         auto field_it = class_info->fieldIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
-        if(field_it != class_info->fieldIndexByName.end())
+        if (field_it != class_info->fieldIndexByName.end())
         {
             // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
             uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
-            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word;
                 memcpy(&word + (sizeof(uint32_t) - field_size), bytes, field_size);
@@ -1503,7 +1749,7 @@ void putfield(Frame &frame)
     uint32_t reference = get_int(frame);
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
-    
+
     // TODO adicionar verificacoes pra classes nativas, tem que ignorar elas?
 
     Runtime &runtime = Runtime::getInstance();
@@ -1511,14 +1757,14 @@ void putfield(Frame &frame)
     // TODO o nome da classe eh REALMENTE o nome que deve ser acessado? Parece ter casos que NAO.
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
         auto field_it = class_info->fieldIndexByName.find(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 1));
-        if(field_it != class_info->fieldIndexByName.end())
+        if (field_it != class_info->fieldIndexByName.end())
         {
             // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
             uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
-            if(field_size <= 4) // campo com 1, 2 ou 4 bytes
+            if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word = frame.operand_stack.top();
                 memcpy(bytes, &word + (sizeof(uint32_t) - field_size), field_size);
@@ -1556,11 +1802,13 @@ void invokevirtual(Frame &frame)
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(x, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(x, 2);
 
+    Runtime &runtime = Runtime::getInstance();
+
     // Simulação do println
     // Talvez haja outras funcoes que devam ser tratadas(print?)
     if (class_name.compare("java/io/PrintStream") == 0)
     {
-        if(method_name.compare("println") == 0)
+        if (method_name.compare("println") == 0)
         {
             if (method_desc.compare("(C)V") == 0)
             {
@@ -1604,45 +1852,55 @@ void invokevirtual(Frame &frame)
                 printf("%lf\n", d);
                 frame.operand_stack.pop();
             }
+            else if (method_desc.compare("()V") == 0)
+            {
+                printf("\n");
+            }
+            else if (method_desc.compare("(Ljava/lang/String;)V") == 0)
+            {
+                printf("%s\n", (char *)runtime.instances[get_int(frame)]);
+            }
             else
                 printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
             return;
         }
     }
-    else if(class_name.compare("java/util/Scanner") == 0)
+    else if (class_name.compare("java/util/Scanner") == 0)
     {
         // Sla? Tem que simular entrada tambem?
         return;
     }
 
-    printf("%s\n",class_name.c_str());
-    Runtime &runtime = Runtime::getInstance();
+    printf("%s\n", class_name.c_str());
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
-        for(MethodInfo &method : class_info->class_file->methods)
+        for (MethodInfo &method : class_info->class_file->methods)
         {
-            if(class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0)
+            if (class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0)
             {
                 std::vector<uint32_t> args;
                 int index = 0;
-                for(int i = 1; method_desc[i] != ')'; i++, index++)
+                for (int i = 1; method_desc[i] != ')'; i++, index++)
                 {
-                    if(method_desc[i] == 'L')
+                    if (method_desc[i] == 'L')
                     {
                         args.push_back(get_int(frame));
-                        while(method_desc[++i]!=';');
+                        while (method_desc[++i] != ';')
+                            ;
                     }
-                    else if(method_desc[i] == '[')
+                    else if (method_desc[i] == '[')
                     {
                         args.push_back(get_int(frame));
-                        while(method_desc[++i]=='[');
-                        if(method_desc[i] == 'L')
-                            while(method_desc[++i]!=';');
+                        while (method_desc[++i] == '[')
+                            ;
+                        if (method_desc[i] == 'L')
+                            while (method_desc[++i] != ';')
+                                ;
                         else
                             i++;
                     }
-                    else if(method_desc[i] == 'D' || method_desc[i] == 'J')
+                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
                     {
                         args.push_back(get_int(frame));
                         args.push_back(get_int(frame));
@@ -1653,7 +1911,7 @@ void invokevirtual(Frame &frame)
                 args.push_back(get_int(frame));
                 runtime.stack_frames.push(Frame(class_info, method));
 
-                for(;index >= 0;index--)
+                for (; index >= 0; index--)
                     runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
             }
         }
@@ -1675,21 +1933,21 @@ void c_new(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
-    if(class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
+    if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
     {
         frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
         return;
     }
 
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
-    if(class_info != nullptr)
+    if (class_info != nullptr)
     {
         frame.operand_stack.push(runtime.instances.size());
-        if(class_info->fieldBytesAmmount > 0)
+        if (class_info->fieldBytesAmmount > 0)
             runtime.instances.push_back(new uint8_t[class_info->fieldBytesAmmount]{0});
         else
             runtime.instances.push_back(nullptr); // TODO Isso ta certo? Eh melhor nao adicionar nada?
-            //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
+                                                  //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
     }
     else
         frame.pc -= 3;
@@ -1702,24 +1960,24 @@ void newarray(Frame &frame)
     uint8_t type = frame.code->code[++frame.pc];
     uint32_t count = get_int(frame);
     uint8_t size;
-    switch(type)
+    switch (type)
     {
-        case 4: // Boolean
-        case 5: // Char
-        case 8: // Byte
-            size = 1;
-            break;
-        case 9: // Short
-            size = 2;
-            break;
-        case 6: // Float
-        case 10: // Int
-            size = 4;
-            break;
-        case 7: // Double
-        case 11: // Long
-            size = 8;
-            break;
+    case 4: // Boolean
+    case 5: // Char
+    case 8: // Byte
+        size = 1;
+        break;
+    case 9: // Short
+        size = 2;
+        break;
+    case 6:  // Float
+    case 10: // Int
+        size = 4;
+        break;
+    case 7:  // Double
+    case 11: // Long
+        size = 8;
+        break;
     }
 
     array_t *ar = new array_t;
@@ -1727,7 +1985,7 @@ void newarray(Frame &frame)
     ar->bytes = new uint8_t[count * size]{0};
 
     frame.operand_stack.push(runtime.instances.size());
-    runtime.instances.push_back((uint8_t*)ar);
+    runtime.instances.push_back((uint8_t *)ar);
 }
 
 // TODO testar
@@ -1735,16 +1993,16 @@ void anewarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
     uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    
+
     ExecModule::prepare_class(runtime, frame.class_info->class_file->get_string_constant_pool(index));
-    
+
     uint32_t count = get_int(frame);
     array_t *ar = new array_t;
     ar->size = count;
-    ar->bytes = new uint8_t[count * sizeof(void*)]{0};
+    ar->bytes = new uint8_t[count * sizeof(void *)]{0};
 
     frame.operand_stack.push(runtime.instances.size());
-    runtime.instances.push_back((uint8_t*)ar);
+    runtime.instances.push_back((uint8_t *)ar);
 }
 
 // TODO testar
@@ -1752,7 +2010,7 @@ void arraylength(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
     uint32_t reference = get_int(frame);
-    
+
     frame.operand_stack.push(((array_t *)runtime.instances[reference])->size);
 }
 
@@ -1765,24 +2023,24 @@ void monitorexit(Frame &frame) {}
 void wide(Frame &frame)
 {
     uint8_t opcode = frame.code->code[++frame.pc];
-    if(opcode == 0x84) // IINC
+    if (opcode == 0x84) // IINC
     {
         uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
         int32_t add = (int32_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index] = (int32_t)(frame.local_variables[index]) + add;
     }
-    else if(opcode == 0x16 || opcode == 0x18) // LLOAD DLOAD
+    else if (opcode == 0x16 || opcode == 0x18) // LLOAD DLOAD
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.operand_stack.push(frame.local_variables[index]);
         frame.operand_stack.push(frame.local_variables[index + 1]);
     }
-    else if(opcode == 0x15 || opcode == 0x17 || opcode == 0x19) // ILOAD FLOAD ALOAD
+    else if (opcode == 0x15 || opcode == 0x17 || opcode == 0x19) // ILOAD FLOAD ALOAD
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.operand_stack.push(frame.local_variables[index]);
     }
-    else if(opcode == 0x37 || opcode == 0x39) // LSTORE DSTORE
+    else if (opcode == 0x37 || opcode == 0x39) // LSTORE DSTORE
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index + 1] = frame.operand_stack.top();
@@ -1790,18 +2048,17 @@ void wide(Frame &frame)
         frame.local_variables[index] = frame.operand_stack.top();
         frame.operand_stack.pop();
     }
-    else if(opcode == 0xa9) // RET
+    else if (opcode == 0xa9) // RET
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.pc = frame.local_variables[index] - 1;
     }
-    else// if(opcode == 0x36 || opcode == 0x38 || opcode == 0x3a) // ISTORE FSTORE ASTORE
+    else // if(opcode == 0x36 || opcode == 0x38 || opcode == 0x3a) // ISTORE FSTORE ASTORE
     {
         uint16_t index = (uint16_t)((frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
         frame.local_variables[index] = frame.operand_stack.top();
         frame.operand_stack.pop();
     }
-    
 }
 
 // TODO implementar iso
@@ -1811,7 +2068,7 @@ void ifnull(Frame &frame)
 {
     uint32_t value = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(value == 0) // Indice considerado como NULL
+    if (value == 0) // Indice considerado como NULL
         frame.pc += offset - 3;
 }
 
@@ -1819,7 +2076,7 @@ void ifnonnull(Frame &frame)
 {
     uint32_t value = get_int(frame);
     int32_t offset = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    if(value != 0) // Indice considerado como NULL
+    if (value != 0) // Indice considerado como NULL
         frame.pc += offset - 3;
 }
 
