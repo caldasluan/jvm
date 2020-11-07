@@ -2037,10 +2037,10 @@ void invokespecial(Frame &frame)
 
                 args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
 
-                runtime.stack_frames.push(Frame(class_info, method));
+                runtime.stack_frames.push(new Frame(class_info, method));
 
                 for (; index >= 0; index--)
-                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
             }
         }
     }

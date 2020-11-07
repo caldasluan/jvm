@@ -27,6 +27,7 @@ void ExecModule::exec_jvm(Runtime &runtime) {
             if(frame->ret_words == 1)
             {
                 uint32_t ret = frame->operand_stack.top();
+                delete runtime.stack_frames.top();
                 runtime.stack_frames.pop();
                 runtime.stack_frames.top()->operand_stack.push(ret);
             }
@@ -35,6 +36,7 @@ void ExecModule::exec_jvm(Runtime &runtime) {
                 uint32_t ret1 = frame->operand_stack.top();
                 frame->operand_stack.pop();
                 uint32_t ret2 = frame->operand_stack.top();
+                delete runtime.stack_frames.top();
                 runtime.stack_frames.pop();
                 runtime.stack_frames.top()->operand_stack.push(ret2);
                 runtime.stack_frames.top()->operand_stack.push(ret1);
