@@ -12,7 +12,7 @@
 class Runtime
 {
 public:
-    std::stack<Frame> stack_frames;
+    std::stack<Frame*> stack_frames;
     std::vector<uint8_t *> instances;
     std::map<std::string, ClassInfo *> classMap;
 

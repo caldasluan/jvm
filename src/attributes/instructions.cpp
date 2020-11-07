@@ -182,7 +182,7 @@ void dconst_1(Frame &frame)
 void bipush(Frame &frame)
 {
     frame.pc++;
-    frame.operand_stack.push((int8_t)frame.code->code[frame.pc]);
+    frame.operand_stack.push((int32_t)(int8_t)frame.code->code[frame.pc]);
 }
 
 void sipush(Frame &frame)
@@ -1964,10 +1964,10 @@ void invokevirtual(Frame &frame)
 
                 args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
 
-                runtime.stack_frames.push(Frame(class_info, method));
+                runtime.stack_frames.push(new Frame(class_info, method));
 
                 for (; index >= 0; index--)
-                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
             }
         }
     }
@@ -2105,10 +2105,10 @@ void invokestatic(Frame &frame)
                         args.push_back(get_int(frame));
                 }
 
-                runtime.stack_frames.push(Frame(class_info, method));
+                runtime.stack_frames.push(new Frame(class_info, method));
 
                 for (; index >= 0; index--)
-                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
             }
         }
     }
