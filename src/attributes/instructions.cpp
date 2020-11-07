@@ -192,7 +192,6 @@ void sipush(Frame &frame)
     frame.pc++;
 }
 
-// ToDo falta String
 void ldc(Frame &frame)
 {
     frame.pc++;
@@ -223,10 +222,9 @@ void ldc(Frame &frame)
     }
 }
 
-// ToDo falta String
 void ldc_w(Frame &frame)
 {
-    uint8_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint8_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc] - 1;
     uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Integer)
     {
@@ -1839,7 +1837,6 @@ void invokevirtual(Frame &frame)
     Runtime &runtime = Runtime::getInstance();
 
     // Simulação do println
-    // Talvez haja outras funcoes que devam ser tratadas(print?)
     if (class_name.compare("java/io/PrintStream") == 0)
     {
         if (method_name.compare("println") == 0)
@@ -1898,11 +1895,6 @@ void invokevirtual(Frame &frame)
                 printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
             return;
         }
-    }
-    else if (class_name.compare("java/util/Scanner") == 0)
-    {
-        // Sla? Tem que simular entrada tambem?
-        return;
     }
 
     printf("%s\n", class_name.c_str());
@@ -1987,7 +1979,6 @@ void c_new(Frame &frame)
         frame.pc -= 3;
 }
 
-// TODO testar
 void newarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
@@ -2023,7 +2014,6 @@ void newarray(Frame &frame)
     runtime.instances.push_back((uint8_t *)ar);
 }
 
-// TODO testar
 void anewarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
@@ -2041,7 +2031,6 @@ void anewarray(Frame &frame)
     runtime.instances.push_back((uint8_t *)ar);
 }
 
-// TODO testar
 void arraylength(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
@@ -2097,7 +2086,6 @@ void wide(Frame &frame)
     }
 }
 
-// TODO implementar iso
 void multianewarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
