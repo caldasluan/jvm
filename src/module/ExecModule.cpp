@@ -1,3 +1,4 @@
+#include <cstring>
 #include "ExecModule.h"
 #include "../model/Frame.h"
 #include "../attributes/instructions.h"
@@ -108,8 +109,7 @@ void ExecModule::clinit_loaded_classes(Runtime &runtime, ClassInfo *class_info)
         clinit_loaded_classes(runtime, runtime.classMap[class_info->class_file->get_string_constant_pool(class_info->class_file->super_class)]);
 }
 
-// TODO passar argumentos da linha de comando pro metodo main
-void ExecModule::initialize_jvm(const char *file_name)
+void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
 {
     Runtime &runtime = Runtime::getInstance();
 
@@ -140,6 +140,22 @@ void ExecModule::initialize_jvm(const char *file_name)
     }
 
     ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
+
+    // Prepara argumentos da main
+    array_t *ar = new array_t;
+    ar->size = 4;
+    ar->lenght = argc - 2;
+    ar->bytes = new uint8_t[ar->lenght > 1 ? ar->lenght * ar->size : 1]{0};
+    for (int i = 2; i < argc; i++) {
+        runtime.instances.push_back((uint8_t *)argv[i]);
+        uint32_t value = runtime.instances.size() - 1;
+        ar->bytes[(i - 2) * ar->size] = value >> 24;
+        ar->bytes[(i - 2) * ar->size + 1] = value >> 16;
+        ar->bytes[(i - 2) * ar->size + 2] = value >> 8;
+        ar->bytes[(i - 2) * ar->size + 3] = value;
+    }
+    runtime.instances.push_back((uint8_t *)ar);
+    runtime.stack_frames.top().local_variables[0] = runtime.instances.size() - 1;
 
     exec_jvm(runtime);
 }
