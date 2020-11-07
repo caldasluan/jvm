@@ -4,7 +4,7 @@
 #include "../attributes/instructions.h"
 
 void mostra(Frame& frame) {
-    printf("\npc: %d, instr: %02x pilha: %lu\n", frame.pc, (uint8_t)frame.code->code[frame.pc], frame.operand_stack.size());
+    printf("\n%s.%s.%d  %s  pilha: %lu\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, instructions_mnemonics[frame.code->code[frame.pc]].mnemonic, frame.operand_stack.size());
     printf("vetor: ");
     for (int i = 0; i < frame.local_variables.size(); i++) {
         printf("%d = %d, ", i, frame.local_variables[i]);
@@ -16,9 +16,10 @@ void mostra(Frame& frame) {
 void ExecModule::exec_jvm(Runtime &runtime) {
     while (runtime.stack_frames.size() > 0) {
         Frame &frame = runtime.stack_frames.top();
-        // mostra(frame);
-        printf("%s.%s %d %s\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
+        mostra(frame);
+        //printf("%s.%s %d %s\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
         //getchar();
+
         instructions_mnemonics[frame.code->code[frame.pc]].execution(frame);
         frame.pc++;
 
@@ -119,9 +120,9 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
 
     for (MethodInfo &method : class_info->class_file->methods)
     {
-        if (class_info->class_file->get_string_constant_pool(method.name_index).compare("main") == 0 &&
-            class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("([Ljava/lang/String;)V") == 0 &&
-            method.access_flags == 0x0009)
+        bool method_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare("main") == 0;
+        bool method_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("([Ljava/lang/String;)V") == 0;
+        if (method_name_equal && method_desc_equal && method.access_flags == 0x0009)
         {
             method_main = method;
             break;
@@ -138,7 +139,7 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
         printf("Método main não encontrado!\n");
         return;
     }
-    
+
     // Prepara argumentos da main
     array_t *ar = new array_t;
     ar->size = 4;

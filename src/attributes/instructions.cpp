@@ -188,7 +188,7 @@ void bipush(Frame &frame)
 void sipush(Frame &frame)
 {
     frame.pc++;
-    frame.operand_stack.push((((uint32_t)frame.code->code[frame.pc]) << 8) + (uint8_t)frame.code->code[frame.pc + 1]);
+    frame.operand_stack.push((((int8_t)frame.code->code[frame.pc]) << 8) | (uint8_t)frame.code->code[frame.pc + 1]);
     frame.pc++;
 }
 
@@ -199,6 +199,7 @@ void ldc(Frame &frame)
     uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Integer)
     {
+        printf("Ue\n");
         frame.operand_stack.push(frame.class_info->class_file->constant_pool[x].get_int());
     }
     else if (tag == CpTagConst::CONSTANT_Float)
@@ -1543,7 +1544,7 @@ void if_acmpne(Frame &frame)
 
 void c_goto(Frame &frame)
 {
-    frame.pc += ((((int32_t)(int8_t)frame.code->code[++frame.pc]) << 8) | frame.code->code[++frame.pc]) - 3;
+    frame.pc += ((((int8_t)frame.code->code[++frame.pc]) << 8) | frame.code->code[++frame.pc]) - 3;
 }
 
 void jsr(Frame &frame)
@@ -1908,50 +1909,17 @@ void invokevirtual(Frame &frame)
             else if (method_desc.compare("()V") == 0)
             {
                 printf("\n");
+                frame.operand_stack.pop();
             }
             else if (method_desc.compare("(Ljava/lang/String;)V") == 0)
             {
                 printf("%s%c", (char *)runtime.instances[get_int(frame)], endln);
+                frame.operand_stack.pop();
             }
             else
                 printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
             return;
         }
-    }
-    else if (class_name.compare("java/util/Scanner") == 0) { return; }
-    else if (class_name.compare("java/lang/StringBuilder") == 0)
-    {
-/*  Nao vou implementar sem saber se precisa
-        printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
-        if(method_name.compare("append") == 0)
-        {
-            if(method_desc.compare("(Ljava/lang/String;)Ljava/lang/StringBuilder;") == 0)
-            {
-
-                
-            }
-            else if(method_desc.compare("(I)Ljava/lang/StringBuilder;") == 0)
-            {
-
-            }
-            else if(method_desc.compare("(J)Ljava/lang/StringBuilder;") == 0)
-            {
-
-            }
-            else if(method_desc.compare("(F)Ljava/lang/StringBuilder;") == 0)
-            {
-
-            }
-            else if(method_desc.compare("()Ljava/lang/StringBuilder;") == 0)
-            {
-
-            }
-        }
-        else if(method_name.compare("toString") == 0)
-        {
-
-        } */
-        return;
     }
 
     printf("%s\n", class_name.c_str());
@@ -2021,7 +1989,64 @@ void invokespecial(Frame &frame)
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
 
+    if(class_name.compare("java/lang/Object") == 0)
+    {
+        return;
+    }
+
     Runtime &runtime = Runtime::getInstance();
+
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+    if (class_info != nullptr)
+    {
+        for (MethodInfo &method : class_info->class_file->methods)
+        {
+            bool class_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+            bool class_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+            
+            if (class_name_equal && class_desc_equal)
+            {
+                std::vector<uint32_t> args;
+                int index = 0;
+                for (int i = 1; method_desc[i] != ')'; i++, index++)
+                {
+                    if (method_desc[i] == 'L')
+                    {
+                        args.push_back(get_int(frame));
+                        while (method_desc[++i] != ';')
+                            ;
+                    }
+                    else if (method_desc[i] == '[')
+                    {
+                        args.push_back(get_int(frame));
+                        while (method_desc[++i] == '[')
+                            ;
+                        if (method_desc[i] == 'L')
+                            while (method_desc[++i] != ';')
+                                ;
+                        else
+                            i++;
+                    }
+                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
+                    {
+                        args.push_back(get_int(frame));
+                        args.push_back(get_int(frame));
+                    }
+                    else
+                        args.push_back(get_int(frame));
+                }
+
+                args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
+
+                runtime.stack_frames.push(Frame(class_info, method));
+
+                for (; index >= 0; index--)
+                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+            }
+        }
+    }
+    else
+        frame.pc -= 3;
 }
 
 void invokestatic(Frame &frame)
@@ -2031,6 +2056,13 @@ void invokestatic(Frame &frame)
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
+
+    if(class_name.compare("java/util/Objects") == 0 && method_name.compare("requireNonNull") == 0 && method_desc.compare("(Ljava/lang/Object;)Ljava/lang/Object;") == 0)
+    {
+        if(frame.operand_stack.top() == 0)
+            printf("Referencia nula amigo!\n"); // TODO Botar um throw
+        return;
+    }
 
     Runtime &runtime = Runtime::getInstance();
 
@@ -2081,6 +2113,8 @@ void invokestatic(Frame &frame)
             }
         }
     }
+    else
+        frame.pc -= 3;
 }
 
 void invokeinterface(Frame &frame) {}
@@ -2094,14 +2128,7 @@ void c_new(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
-    if (class_name.compare("java/lang/StringBuilder") == 0)
-    {
-        std::string *s = new std::string();
-        runtime.instances.push_back((uint8_t *)s);
-        frame.operand_stack.push(runtime.instances.size() - 1);
-        return;
-    }
-    else if(class_name.compare("java/util/Scanner") == 0)
+    if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
     {
         frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
         return;
@@ -2181,9 +2208,22 @@ void arraylength(Frame &frame)
     frame.operand_stack.push(((array_t *)runtime.instances[reference])->lenght);
 }
 
-void athrow(Frame &frame) {}
-void checkcast(Frame &frame) {}
-void instanceof (Frame & frame) {}
+void athrow(Frame &frame)
+{
+
+}
+
+void checkcast(Frame &frame)
+
+{
+    frame.pc += 2;
+}
+
+void instanceof(Frame & frame)
+{
+    frame.pc += 2;
+}
+
 void monitorenter(Frame &frame) {}
 void monitorexit(Frame &frame) {}
 

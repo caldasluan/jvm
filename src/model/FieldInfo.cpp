@@ -18,7 +18,7 @@ uint8_t FieldInfo::field_size_bytes(std::string descr)
       return 8;
     case 'L': // Reference
     case '[': // Array Reference
-      return sizeof(void *);
+      return 4;
   }
   return 0;
 }

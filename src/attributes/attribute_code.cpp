@@ -117,7 +117,7 @@ void AttributeCode::showCode(int offset, ClassFile& classFile)
       break;
     case OP_2_BRANCH:
       aux1 = getU2(codeV);
-      printf(" %d (%+d)\n", (uint32_t)(codeV - code + (int32_t)aux1) - 3, (int32_t)aux1);
+      printf(" %d (%+d)\n", (uint32_t)(codeV - code + (int16_t)aux1) - 3, (int16_t)aux1);
       break;
     case OP_4_BRANCH:
       aux1 = getU4(codeV);
