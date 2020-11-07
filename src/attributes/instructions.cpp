@@ -1183,7 +1183,6 @@ void lshr(Frame &frame)
 
 void iushr(Frame &frame)
 {
-
     int x = get_int(frame) & 0x1F;
     int y = get_int(frame);
     uint64_t mask = ~mask_shift[x + 32];
@@ -1257,7 +1256,7 @@ void iinc(Frame &frame)
 
 void i2l(Frame &frame)
 {
-    long x = get_int(frame);
+    long long x = get_int(frame);
     frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
