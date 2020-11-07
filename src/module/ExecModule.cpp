@@ -17,7 +17,7 @@ void ExecModule::exec_jvm(Runtime &runtime) {
     while (runtime.stack_frames.size() > 0) {
         Frame* frame = runtime.stack_frames.top();
         // mostra(frame);
-        // printf("%s.%s %d %d(%s)\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, frame.code->code[frame.pc], instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
+        printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
         //getchar();
         instructions_mnemonics[frame->code->code[frame->pc]].execution(*frame);
         frame->pc++;
