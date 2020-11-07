@@ -1,4 +1,4 @@
-
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -42,6 +42,41 @@ double get_double(Frame &frame)
     frame.operand_stack.pop();
     memcpy(&xd, &x, sizeof(double));
     return xd;
+}
+
+uint32_t gera_multiarray(int size_dim[], Runtime &runtime, uint32_t size, uint32_t dimensions)
+{
+    if (dimensions > 0)
+    {
+        array_t *ar = new array_t;
+        ar->size = 4;
+        ar->lenght = size_dim[dimensions];
+        ar->bytes = new uint8_t[ar->lenght * 4]{0};
+
+        for (int i = 0; i < ar->lenght; i++)
+        {
+            uint32_t reference = gera_multiarray(size_dim, runtime, size, dimensions - 1);
+            ar->bytes[i * 4] = reference >> 24;
+            ar->bytes[i * 4 + 1] = reference >> 16;
+            ar->bytes[i * 4 + 2] = reference >> 8;
+            ar->bytes[i * 4 + 3] = reference;
+        }
+
+        runtime.instances.push_back((uint8_t *)ar);
+
+        return runtime.instances.size() - 1;
+    }
+    else
+    {
+        array_t *ar = new array_t;
+        ar->size = size;
+        ar->lenght = size_dim[dimensions];
+        ar->bytes = new uint8_t[ar->lenght * size]{0};
+
+        runtime.instances.push_back((uint8_t *)ar);
+
+        return runtime.instances.size() - 1;
+    }
 }
 
 // Início das instruções
@@ -230,8 +265,7 @@ void ldc2_w(Frame &frame)
 
 void iload(Frame &frame)
 {
-    frame.pc++;
-    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[frame.pc]]);
+    frame.operand_stack.push(frame.local_variables[(uint32_t)frame.code->code[++frame.pc]]);
 }
 
 void lload(Frame &frame)
@@ -1982,6 +2016,7 @@ void newarray(Frame &frame)
 
     array_t *ar = new array_t;
     ar->size = size;
+    ar->lenght = count;
     ar->bytes = new uint8_t[count * size]{0};
 
     frame.operand_stack.push(runtime.instances.size());
@@ -1998,7 +2033,8 @@ void anewarray(Frame &frame)
 
     uint32_t count = get_int(frame);
     array_t *ar = new array_t;
-    ar->size = count;
+    ar->size = 4;
+    ar->lenght = count;
     ar->bytes = new uint8_t[count * sizeof(void *)]{0};
 
     frame.operand_stack.push(runtime.instances.size());
@@ -2011,7 +2047,7 @@ void arraylength(Frame &frame)
     Runtime &runtime = Runtime::getInstance();
     uint32_t reference = get_int(frame);
 
-    frame.operand_stack.push(((array_t *)runtime.instances[reference])->size);
+    frame.operand_stack.push(((array_t *)runtime.instances[reference])->lenght);
 }
 
 void athrow(Frame &frame) {}
@@ -2062,7 +2098,44 @@ void wide(Frame &frame)
 }
 
 // TODO implementar iso
-void multianewarray(Frame &frame) {}
+void multianewarray(Frame &frame)
+{
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint8_t dimensions = frame.code->code[++frame.pc];
+    std::string reference = frame.class_info->class_file->get_string_constant_pool(index);
+
+    reference.erase(std::remove(reference.begin(), reference.end(), '['), reference.end());
+    uint8_t size;
+    if (reference.compare("Z") == 0 || reference.compare("C") == 0 || reference.compare("B") == 0)
+    {
+        size = 1;
+    }
+    else if (reference.compare("S") == 0)
+    {
+        size = 2;
+    }
+    else if (reference.compare("F") == 0 || reference.compare("I") == 0)
+    {
+        size = 4;
+    }
+    else if (reference.compare("D") == 0 || reference.compare("J") == 0)
+    {
+        size = 8;
+    }
+    else
+    {
+        size = 4;
+    }
+
+    int size_dim[dimensions];
+    for (int i = 0; i < dimensions; i++)
+    {
+        size_dim[i] = get_int(frame);
+    }
+
+    frame.operand_stack.push(gera_multiarray(size_dim, runtime, size, --dimensions));
+}
 
 void ifnull(Frame &frame)
 {
