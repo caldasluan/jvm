@@ -1642,7 +1642,7 @@ void getstatic(Frame &frame)
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
 
-    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado
     {
         frame.operand_stack.push(0);
         if (field_size == 8)
@@ -1689,7 +1689,7 @@ void putstatic(Frame &frame)
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
 
-    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado, TODO confirmar se isso ta certo
+    if (class_name.compare("java/lang/System") == 0) // Qualquer field acessado na java/lang/System eh essencialmente desprezado
     {
         frame.operand_stack.pop();
         if (field_size == 8)
@@ -1848,6 +1848,12 @@ void invokevirtual(Frame &frame)
             if (method_desc.compare("(C)V") == 0)
             {
                 printf("%c\n", frame.operand_stack.top());
+                frame.operand_stack.pop();
+                frame.operand_stack.pop();
+            }
+            else if (method_desc.compare("()Z") == 0)
+            {
+                printf("%s\n", frame.operand_stack.top() != 0 ? "true" : "false");
                 frame.operand_stack.pop();
                 frame.operand_stack.pop();
             }
