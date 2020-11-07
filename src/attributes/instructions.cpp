@@ -237,6 +237,18 @@ void ldc_w(Frame &frame)
         memcpy(&in, &f, sizeof(float));
         frame.operand_stack.push(in);
     }
+    else if (tag == CpTagConst::CONSTANT_String)
+    {
+        std::string ss = frame.class_info->class_file->get_string_constant_pool(x + 1);
+        uint8_t *caracters = new uint8_t[ss.length() + 1]{0};
+        for (int i = 0; i < ss.length() + 1; i++)
+        {
+            caracters[i] = ss.c_str()[i];
+        }
+        Runtime &runtime = Runtime::getInstance();
+        frame.operand_stack.push(runtime.instances.size());
+        runtime.instances.push_back(caracters);
+    }
 }
 
 void ldc2_w(Frame &frame)
@@ -1550,45 +1562,40 @@ void ret(Frame &frame)
     frame.pc = frame.local_variables[frame.code->code[++frame.pc]] - 1;
 }
 
-// TODO testar
 void tableswitch(Frame &frame)
 {
     uint32_t instruction_pc = frame.pc;
-    frame.pc = (frame.pc + 3) % 4;
-    int32_t def = *(int32_t *)(frame.code->code + frame.pc);
-    int32_t low = *(int32_t *)(frame.code->code + frame.pc + 4);
-    int32_t high = *(int32_t *)(frame.code->code + frame.pc + 8);
-    frame.pc += 12;
+    frame.pc += (4 - (frame.pc % 4)) % 4;
+    int32_t def = (frame.code->code[frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    int32_t low = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    int32_t high = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    frame.pc++;
     int32_t index = get_int(frame);
     if (index < low || index > high)
     {
         frame.pc = instruction_pc + def;
-        return;
     }
-
-    frame.pc = instruction_pc + *(int32_t *)(frame.code->code + frame.pc + (index - low) * 4);
+    else
+    {
+        int32_t indice = frame.pc + (index - low) * 4;
+        frame.pc = instruction_pc + ((frame.code->code[indice] << 24) | (frame.code->code[indice + 1] << 16) | (frame.code->code[indice + 2] << 8) | frame.code->code[indice + 3]);
+    }
 }
 
-// TODO testar
 void lookupswitch(Frame &frame)
 {
     uint32_t instruction_pc = frame.pc;
-    frame.pc = (frame.pc + 3) % 4;
-    int32_t def = *(int32_t *)(frame.code->code + frame.pc), npairs = *(int32_t *)(frame.code->code + frame.pc + 4);
-    frame.pc += 8;
+    frame.pc += (4 - (frame.pc % 4)) % 4;
+    int32_t def = (frame.code->code[frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    int32_t npairs = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     int32_t key = get_int(frame);
-    uint8_t *curCode = frame.code->code + frame.pc;
-    int32_t low = 0, high = npairs, mid;
-    while (low < high)
+
+    while (npairs--)
     {
-        mid = (high - low) / 2;
-        if (*(int32_t *)(curCode + mid * 8) > key)
-            high = mid - 1;
-        else if (*(int32_t *)(curCode + mid * 8) < key)
-            low = mid + 1;
-        else
-        {
-            frame.pc = instruction_pc + *(int32_t *)(curCode + mid * 8 + 4);
+        int32_t switch_key = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+        int32_t offset = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+        if (key == switch_key) {
+            frame.pc = instruction_pc + offset;
             return;
         }
     }
@@ -2146,6 +2153,7 @@ void goto_w(Frame &frame)
     frame.pc += (int32_t)((frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
     frame.pc -= 5;
 }
+
 void jsr_w(Frame &frame)
 {
     int32_t offset = ((frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc]);
