@@ -1369,36 +1369,32 @@ void lcmp(Frame &frame)
     frame.operand_stack.push(y > x ? 1 : y < x ? -1 : 0);
 }
 
-// Todo tratar NaN
 void fcmpl(Frame &frame)
 {
     float fval2 = get_float(frame);
     float fval1 = get_float(frame);
-    frame.operand_stack.push(fval1 > fval2 ? 1 : fval1 < fval2 ? -1 : 0);
+    frame.operand_stack.push(fval1 > fval2 ? 1 : fval1 == fval2 ? 0 : -1);
 }
 
-// Todo tratar NaN
 void fcmpg(Frame &frame)
 {
     float fval2 = get_float(frame);
     float fval1 = get_float(frame);
-    frame.operand_stack.push(fval1 > fval2 ? 1 : fval1 < fval2 ? -1 : 0);
+    frame.operand_stack.push(fval1 < fval2 ? -1 : fval1 == fval2 ? 0 : 1);
 }
 
-// Todo tratar NaN
 void dcmpl(Frame &frame)
 {
     double val2 = get_double(frame);
     double val1 = get_double(frame);
-    frame.operand_stack.push(val1 > val2 ? 1 : val1 < val2 ? -1 : 0);
+    frame.operand_stack.push(val1 > val2 ? 1 : val1 == val2 ? 0 : -1);
 }
 
-// Todo tratar NaN
 void dcmpg(Frame &frame)
 {
     double val2 = get_double(frame);
     double val1 = get_double(frame);
-    frame.operand_stack.push(val1 > val2 ? 1 : val1 < val2 ? -1 : 0);
+    frame.operand_stack.push(val1 < val2 ? -1 : val1 == val2 ? 0 : 1);
 }
 
 void ifeq(Frame &frame)
@@ -1594,7 +1590,8 @@ void lookupswitch(Frame &frame)
     {
         int32_t switch_key = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
         int32_t offset = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-        if (key == switch_key) {
+        if (key == switch_key)
+        {
             frame.pc = instruction_pc + offset;
             return;
         }
