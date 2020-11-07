@@ -188,7 +188,7 @@ void bipush(Frame &frame)
 void sipush(Frame &frame)
 {
     frame.pc++;
-    frame.operand_stack.push((((uint32_t)frame.code->code[frame.pc]) << 8) + (uint8_t)frame.code->code[frame.pc + 1]);
+    frame.operand_stack.push((((int32_t)(int8_t)frame.code->code[frame.pc]) << 8) + (uint8_t)frame.code->code[frame.pc + 1]);
     frame.pc++;
 }
 
@@ -1182,7 +1182,6 @@ void lshr(Frame &frame)
 
 void iushr(Frame &frame)
 {
-
     int x = get_int(frame) & 0x1F;
     int y = get_int(frame);
     uint64_t mask = ~mask_shift[x + 32];
@@ -1256,7 +1255,7 @@ void iinc(Frame &frame)
 
 void i2l(Frame &frame)
 {
-    long x = get_int(frame);
+    long long x = get_int(frame);
     frame.operand_stack.push(x >> 32);
     frame.operand_stack.push(x);
 }
