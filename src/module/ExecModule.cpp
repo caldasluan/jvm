@@ -17,7 +17,7 @@ void ExecModule::exec_jvm(Runtime &runtime) {
     while (runtime.stack_frames.size() > 0) {
         Frame &frame = runtime.stack_frames.top();
         // mostra(frame);
-        printf("%s.%s %d %d(%s)\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, frame.code->code[frame.pc], instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
+        printf("%s.%s %d %s\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, instructions_mnemonics[frame.code->code[frame.pc]].mnemonic);
         //getchar();
         instructions_mnemonics[frame.code->code[frame.pc]].execution(frame);
         frame.pc++;
@@ -138,9 +138,7 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
         printf("Método main não encontrado!\n");
         return;
     }
-
-    ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
-
+    
     // Prepara argumentos da main
     array_t *ar = new array_t;
     ar->size = 4;
@@ -156,6 +154,9 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
     }
     runtime.instances.push_back((uint8_t *)ar);
     runtime.stack_frames.top().local_variables[0] = runtime.instances.size() - 1;
+
+    ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
+
 
     exec_jvm(runtime);
 }

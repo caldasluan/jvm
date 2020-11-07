@@ -1738,6 +1738,14 @@ void getfield(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     uint32_t reference = get_int(frame);
+
+    // TODO precisa dar throw NullPointerException
+    if(reference == 0)
+    {
+        printf("ACESSANDO NULO???\n");
+        return;
+    }
+
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
 
@@ -1783,6 +1791,14 @@ void putfield(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     uint32_t reference = get_int(frame);
+
+    // TODO precisa dar throw NullPointerException
+    if(reference == 0)
+    {
+        printf("ACESSANDO NULO???\n");
+        return;
+    }
+
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(field_ref_index);
     uint8_t field_size = FieldInfo::field_size_bytes(frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2));
 
@@ -1829,6 +1845,7 @@ void putfield(Frame &frame)
 // TODO implementar regras de acesso
 // TODO implementar busca em superclasses e interfaces(fudeu)
 // TODO implementar threading? (precisa?)
+// TODO "Dispatch based on class" significa que temos que salvar a classe exata instanciada pra saber qual usar aqui.
 // TODO testar
 void invokevirtual(Frame &frame)
 {
@@ -1843,23 +1860,18 @@ void invokevirtual(Frame &frame)
     // Simulação do println
     if (class_name.compare("java/io/PrintStream") == 0)
     {
-        if (method_name.compare("println") == 0)
+        if (method_name.compare("println") == 0 || method_name.compare("print") == 0)
         {
+            char endln = method_name.compare("println") == 0 ? '\n' : '\0';
             if (method_desc.compare("(C)V") == 0)
             {
-                printf("%c\n", frame.operand_stack.top());
-                frame.operand_stack.pop();
-                frame.operand_stack.pop();
-            }
-            else if (method_desc.compare("()Z") == 0)
-            {
-                printf("%s\n", frame.operand_stack.top() != 0 ? "true" : "false");
+                printf("%c%c", frame.operand_stack.top(), endln);
                 frame.operand_stack.pop();
                 frame.operand_stack.pop();
             }
             else if (method_desc.compare("(I)V") == 0)
             {
-                printf("%d\n", frame.operand_stack.top());
+                printf("%d%c", frame.operand_stack.top(), endln);
                 frame.operand_stack.pop();
                 frame.operand_stack.pop();
             }
@@ -1869,7 +1881,7 @@ void invokevirtual(Frame &frame)
                 frame.operand_stack.pop();
                 uint64_t b = frame.operand_stack.top();
                 frame.operand_stack.pop();
-                printf("%lld\n", (b << 32) + (long long)a);
+                printf("%lld%c", (b << 32) + (long long)a, endln);
                 frame.operand_stack.pop();
             }
             else if (method_desc.compare("(F)V") == 0)
@@ -1878,7 +1890,7 @@ void invokevirtual(Frame &frame)
                 frame.operand_stack.pop();
                 float f;
                 memcpy(&f, &a, sizeof(float));
-                printf("%f\n", f);
+                printf("%f%c", f, endln);
                 frame.operand_stack.pop();
             }
             else if (method_desc.compare("(D)V") == 0)
@@ -1890,7 +1902,7 @@ void invokevirtual(Frame &frame)
                 b = (b << 32) | a;
                 double d;
                 memcpy(&d, &b, sizeof(double));
-                printf("%lf\n", d);
+                printf("%lf%c", d, endln);
                 frame.operand_stack.pop();
             }
             else if (method_desc.compare("()V") == 0)
@@ -1899,12 +1911,47 @@ void invokevirtual(Frame &frame)
             }
             else if (method_desc.compare("(Ljava/lang/String;)V") == 0)
             {
-                printf("%s\n", (char *)runtime.instances[get_int(frame)]);
+                printf("%s%c", (char *)runtime.instances[get_int(frame)], endln);
             }
             else
                 printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
             return;
         }
+    }
+    else if (class_name.compare("java/util/Scanner") == 0) { return; }
+    else if (class_name.compare("java/lang/StringBuilder") == 0)
+    {
+/*  Nao vou implementar sem saber se precisa
+        printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
+        if(method_name.compare("append") == 0)
+        {
+            if(method_desc.compare("(Ljava/lang/String;)Ljava/lang/StringBuilder;") == 0)
+            {
+
+                
+            }
+            else if(method_desc.compare("(I)Ljava/lang/StringBuilder;") == 0)
+            {
+
+            }
+            else if(method_desc.compare("(J)Ljava/lang/StringBuilder;") == 0)
+            {
+
+            }
+            else if(method_desc.compare("(F)Ljava/lang/StringBuilder;") == 0)
+            {
+
+            }
+            else if(method_desc.compare("()Ljava/lang/StringBuilder;") == 0)
+            {
+
+            }
+        }
+        else if(method_name.compare("toString") == 0)
+        {
+
+        } */
+        return;
     }
 
     printf("%s\n", class_name.c_str());
@@ -1913,7 +1960,10 @@ void invokevirtual(Frame &frame)
     {
         for (MethodInfo &method : class_info->class_file->methods)
         {
-            if (class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0)
+            bool class_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+            bool class_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+            
+            if (class_name_equal && class_desc_equal)
             {
                 std::vector<uint32_t> args;
                 int index = 0;
@@ -1944,7 +1994,9 @@ void invokevirtual(Frame &frame)
                     else
                         args.push_back(get_int(frame));
                 }
-                args.push_back(get_int(frame));
+
+                args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
+
                 runtime.stack_frames.push(Frame(class_info, method));
 
                 for (; index >= 0; index--)
@@ -1956,8 +2008,81 @@ void invokevirtual(Frame &frame)
         frame.pc -= 3;
 }
 
-void invokespecial(Frame &frame) {}
-void invokestatic(Frame &frame) {}
+// ToDo corrigir char
+// TODO implementar regras de acesso
+// TODO implementar busca em superclasses e interfaces(fudeu)
+// TODO implementar threading? (precisa?)
+// TODO testar
+void invokespecial(Frame &frame)
+{
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
+    std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
+    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
+
+    Runtime &runtime = Runtime::getInstance();
+}
+
+void invokestatic(Frame &frame)
+{
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
+    std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
+    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
+
+    Runtime &runtime = Runtime::getInstance();
+
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+    if(class_info != nullptr)
+    {
+        for (MethodInfo &method : class_info->class_file->methods)
+        {
+            bool class_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+            bool class_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+            
+            if (class_name_equal && class_desc_equal)
+            {
+                std::vector<uint32_t> args;
+                int index = 0;
+                for (int i = 1; method_desc[i] != ')'; i++, index++)
+                {
+                    if (method_desc[i] == 'L')
+                    {
+                        args.push_back(get_int(frame));
+                        while (method_desc[++i] != ';')
+                            ;
+                    }
+                    else if (method_desc[i] == '[')
+                    {
+                        args.push_back(get_int(frame));
+                        while (method_desc[++i] == '[')
+                            ;
+                        if (method_desc[i] == 'L')
+                            while (method_desc[++i] != ';')
+                                ;
+                        else
+                            i++;
+                    }
+                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
+                    {
+                        args.push_back(get_int(frame));
+                        args.push_back(get_int(frame));
+                    }
+                    else
+                        args.push_back(get_int(frame));
+                }
+
+                runtime.stack_frames.push(Frame(class_info, method));
+
+                for (; index >= 0; index--)
+                    runtime.stack_frames.top().local_variables[args.size() - index - 1] = args[index];
+            }
+        }
+    }
+}
+
 void invokeinterface(Frame &frame) {}
 void invokedynamic(Frame &frame) {}
 
@@ -1969,7 +2094,14 @@ void c_new(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
-    if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
+    if (class_name.compare("java/lang/StringBuilder") == 0)
+    {
+        std::string *s = new std::string();
+        runtime.instances.push_back((uint8_t *)s);
+        frame.operand_stack.push(runtime.instances.size() - 1);
+        return;
+    }
+    else if(class_name.compare("java/util/Scanner") == 0)
     {
         frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
         return;
@@ -2035,7 +2167,7 @@ void anewarray(Frame &frame)
     array_t *ar = new array_t;
     ar->size = 4;
     ar->lenght = count;
-    ar->bytes = new uint8_t[count * sizeof(void *)]{0};
+    ar->bytes = new uint8_t[count * ar->size]{0};
 
     frame.operand_stack.push(runtime.instances.size());
     runtime.instances.push_back((uint8_t *)ar);

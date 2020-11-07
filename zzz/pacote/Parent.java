@@ -4,7 +4,6 @@ import zzz.MainAct;
 
 public class Parent {
 
-	@Deprecated
   public static int maxTimesRan = 3;
   
   static {
