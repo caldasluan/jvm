@@ -65,67 +65,67 @@ void show_constant_pool(ClassFile& classFile) {
     for (std::vector<CpInfo>::iterator it = classFile.constant_pool.begin() ; it != classFile.constant_pool.end(); ++it) {
         switch (it->tag) {
             case CpTagConst::CONSTANT_Class:
-                //printf("\t#%4d = Class     \t\t\t #%d \t\t         // %s\n", i, it->get_name_index(), classFile.get_string_constant_pool(i).c_str());
-                printf("[%d] CONSTANT_Class_info\n", i);
-                printf("\t- Class name: \t\t\tcp_info #%d \t\t<%s>\n\n", it->get_name_index(), classFile.get_string_constant_pool(i).c_str());
+                printf("\t#%4d = Class     \t\t\t #%d \t\t         // %s\n", i, it->get_name_index(), classFile.get_string_constant_pool(i).c_str());
+                /*printf("[%d] CONSTANT_Class_info\n", i);
+                printf("\t- Class name: \t\t\tcp_info #%d \t\t<%s>\n\n", it->get_name_index(), classFile.get_string_constant_pool(i).c_str());*/
                 break;
             case CpTagConst::CONSTANT_Fieldref:
-                //printf("\t#%4d = Fieldref  \t\t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
-                printf("[%d] CONSTANT_Fieldref_info\n", i);
+                printf("\t#%4d = Fieldref  \t\t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                /*printf("[%d] CONSTANT_Fieldref_info\n", i);
                 printf("\t- Class name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_class_index(), classFile.get_string_constant_pool(i, 0).c_str());
-                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());*/
                 break;
             case CpTagConst::CONSTANT_Methodref:
-                //printf("\t#%4d = Methodref \t\t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
-                printf("[%d] CONSTANT_Methodref_info\n", i);
+                printf("\t#%4d = Methodref \t\t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                /*printf("[%d] CONSTANT_Methodref_info\n", i);
                 printf("\t- Class name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_class_index(), classFile.get_string_constant_pool(i, 0).c_str());
-                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());*/
                 break;
             case CpTagConst::CONSTANT_InterfaceMethodref:
-                //printf("\t#%4d = InterfaceMethodref \t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
-                printf("[%d] CONSTANT_InterfaceMethodref_info\n", i);
+                printf("\t#%4d = InterfaceMethodref \t\t #%d.#%d \t\t // %s.%s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                /*printf("[%d] CONSTANT_InterfaceMethodref_info\n", i);
                 printf("\t- Class name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_class_index(), classFile.get_string_constant_pool(i, 0).c_str());
-                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());
+                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());*/
                 break;
             case CpTagConst::CONSTANT_String:
-                //printf("\t#%4d = String    \t\t\t #%d \t\t         // %s\n", i, it->get_string_index(), classFile.get_string_constant_pool(i).c_str());
-                printf("[%d] CONSTANT_String_info\n", i);
-                printf("\t- String: \t\t\tcp_info #%d  \t\t<%s>\n\n", it->get_string_index(), classFile.get_string_constant_pool(i).c_str());
+                printf("\t#%4d = String    \t\t\t #%d \t\t         // %s\n", i, it->get_string_index(), classFile.get_string_constant_pool(i).c_str());
+                /*printf("[%d] CONSTANT_String_info\n", i);
+                printf("\t- String: \t\t\tcp_info #%d  \t\t<%s>\n\n", it->get_string_index(), classFile.get_string_constant_pool(i).c_str());*/
                 break;
             case CpTagConst::CONSTANT_Integer:
-                //printf("\t#%4d = Integer    \t\t\t %d\n", i, it->get_int());
-                printf("[%d] CONSTANT_Integer_info\n", i);
-                printf("\t- Integer: \t\t\t%d\n\n", it->get_int());
+                printf("\t#%4d = Integer    \t\t\t %d\n", i, it->get_int());
+                /*printf("[%d] CONSTANT_Integer_info\n", i);
+                printf("\t- Integer: \t\t\t%d\n\n", it->get_int());*/
                 break;
              case CpTagConst::CONSTANT_Float:
-                //printf("\t#%4d = Float    \t\t\t %f\n", i, it->get_float());
-                printf("[%d] CONSTANT_Float_info\n", i);
-                printf("\t- Float: \t\t\t%f\n\n", it->get_float());
+                printf("\t#%4d = Float    \t\t\t %f\n", i, it->get_float());
+                /*printf("[%d] CONSTANT_Float_info\n", i);
+                printf("\t- Float: \t\t\t%f\n\n", it->get_float());*/
                 break;
             case CpTagConst::CONSTANT_Long:
-                //printf("\t#%4d = Long    \t\t\t %lld\n", i, it->get_long());
-                printf("[%d] CONSTANT_Long_info\n", i);
-                printf("\t- Long: \t\t\t%lld\n\n", it->get_long());
+                printf("\t#%4d = Long    \t\t\t %lld\n", i, it->get_long());
+                /*printf("[%d] CONSTANT_Long_info\n", i);
+                printf("\t- Long: \t\t\t%lld\n\n", it->get_long());*/
                 break;
             case CpTagConst::CONSTANT_Double:
-                //printf("\t#%4d = Double    \t\t\t %lf\n", i, it->get_double());
-                printf("[%d] CONSTANT_Double_info\n", i);
-                printf("\t- Double: \t\t\t%lf\n\n", it->get_double());
+                printf("\t#%4d = Double    \t\t\t %lf\n", i, it->get_double());
+                /*printf("[%d] CONSTANT_Double_info\n", i);
+                printf("\t- Double: \t\t\t%lf\n\n", it->get_double());*/
                 break;
             case CpTagConst::CONSTANT_NameAndType:
-                //printf("\t#%4d = NameAndType \t\t\t #%d:#%d \t\t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
-                printf("[%d] CONSTANT_NameAndType_info\n", i);
+                printf("\t#%4d = NameAndType \t\t\t #%d:#%d \t\t // %s:%s\n", i, it->get_name_index(), it->get_descriptor_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
+                /*printf("[%d] CONSTANT_NameAndType_info\n", i);
                 printf("\t- Name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_name_index(), classFile.get_string_constant_pool(i, 0).c_str());
-                printf("\t- Descriptor: \t\t\tcp_info #%d  \t\t<%s>\n\n", it->get_descriptor_index(), classFile.get_string_constant_pool(i, 1).c_str());
+                printf("\t- Descriptor: \t\t\tcp_info #%d  \t\t<%s>\n\n", it->get_descriptor_index(), classFile.get_string_constant_pool(i, 1).c_str());*/
                 break;
             case CpTagConst::CONSTANT_Utf8:
-                //printf("\t#%4d = Utf8    \t\t\t %s\n", i, classFile.get_string_constant_pool(i).c_str());
-                printf("[%d] CONSTANT_Utf8_info\n", i);
-                printf("\t- String: \t\t\t%s\n\n", classFile.get_string_constant_pool(i).c_str());
+                printf("\t#%4d = Utf8    \t\t\t %s\n", i, classFile.get_string_constant_pool(i).c_str());
+               /* printf("[%d] CONSTANT_Utf8_info\n", i);
+                printf("\t- String: \t\t\t%s\n\n", classFile.get_string_constant_pool(i).c_str());*/
                 break;
             case CpTagConst::CONSTANT_LargeNumeric:
-                //printf("\t#%4d = (large numeric continued)\n", i);
-                printf("[%d] (large numeric continued)\n\n", i);
+                printf("\t#%4d = (large numeric continued)\n", i);
+                /*printf("[%d] (large numeric continued)\n\n", i);*/
                 break;
             default:
                 break;
