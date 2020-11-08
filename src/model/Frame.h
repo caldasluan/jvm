@@ -16,6 +16,7 @@ class Frame {
         AttributeCode* code;
         uint32_t pc;
         uint8_t ret_words;
+        bool exception = false;
 
         Frame(ClassInfo*, MethodInfo&);
 };

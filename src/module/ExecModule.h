@@ -10,6 +10,7 @@
 class ExecModule {
 public:
     static void exec_jvm(Runtime &runtime);
+    static void exception_jvm(Runtime &runtime);
     static ClassInfo *prepare_class(Runtime &runtime, std::string fileName);
     static ClassInfo *read_load_class(Runtime &runtime, const char* fileName);
     static void clinit_loaded_classes(Runtime &runtime, ClassInfo *classInfo);
