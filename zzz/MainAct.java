@@ -46,13 +46,11 @@ public class MainAct extends Parent implements Runner {
 
 		int a = 2475558;
 		float b = 2.14f;
-		long c = 1000000000000L, d = 1000000000000L, e = 1000000000000L;
+		long c = 1000000000000L;
 
 		int i = 1;
 		a += i;
 		c += i;
-		d += i;
-		e += i;
 
 		int shiftar = 80, neg = -300;
 
@@ -61,7 +59,7 @@ public class MainAct extends Parent implements Runner {
 		neg = neg >> 3;
 		System.out.println(neg);
 		
-		System.out.println(a + b + c + d + e);
+		System.out.println(a + b - c);
 
 		int[] array = new int[5];
 		char[][] multi = new char[8][4];
@@ -74,8 +72,19 @@ public class MainAct extends Parent implements Runner {
 		runner.run();
 		MainAct ma = (MainAct)runner;
 
+		try
+		{
+			a = 3 / 0;
+		}
+		catch(Exception exc){}
+
 		Parent p = new MainAct();
 		p.po();
+
+		try
+		{
+			ma.ehIsso();
+		} catch(Exception exc) {}
 		
 		test[0] = ma.new Helper();
 

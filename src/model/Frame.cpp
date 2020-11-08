@@ -9,4 +9,5 @@ Frame::Frame(ClassInfo* class_info, MethodInfo& method) {
     this->code = code;
     this->local_variables.resize(code->max_locals, 0);
     this->ret_words = 0;
+    this->exception = false;
 }

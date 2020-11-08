@@ -116,7 +116,7 @@ void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& method
 }
 
 // TODO adicionar verificações na leitura da classe, retirar aviso na execucao quando nome da classe e arquivo forem diferentes
-ClassFile* ReadModule::read_file(const char* file_name) {
+ClassFile* ReadModule::read_file(const char* file_name, bool warn_diff_name) {
     ClassFile *classFile = new ClassFile;
     FILE* fp;
     fp = fopen(file_name, "rb");

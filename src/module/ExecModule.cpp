@@ -22,7 +22,7 @@ void ExecModule::exec_jvm(Runtime &runtime)
     while (runtime.stack_frames.size() > 0)
     {
         Frame *frame = runtime.stack_frames.top();
-        //mostra(frame);
+        mostra(frame);
         // printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
         //getchar();
         try
@@ -103,16 +103,20 @@ ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
 // Le e aloca memoria pras variaveis estaticas, deixa preparadas pra rodar clinit, se houver.
 ClassInfo *ExecModule::read_load_class(Runtime &runtime, const char *fileName)
 {
-    ClassFile *classFile = ReadModule::read_file(fileName);
+    ClassFile *classFile = ReadModule::read_file(fileName, false);
 
     runtime.classMap[classFile->get_string_constant_pool(classFile->this_class)] = nullptr;
 
     ClassInfo *superClassInfo = nullptr;
 
+    std::string super_name;
+
     // Despreza super class Object
-    if (classFile->super_class != 0 && runtime.classMap.find(classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end() && classFile->get_string_constant_pool(classFile->super_class).compare("java/lang/Object") != 0)
+    if (classFile->super_class != 0 && runtime.classMap.find(super_name = classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end())
     {
-        superClassInfo = ExecModule::read_load_class(runtime, (classFile->get_string_constant_pool(classFile->super_class) + ".class").c_str());
+        if(super_name.compare("java/lang/Object") == 0)
+            super_name = "Object";
+        superClassInfo = ExecModule::read_load_class(runtime, (super_name + ".class").c_str());
     }
 
     for (uint16_t interface_index : classFile->interfaces)

@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
             if (argv[1][1] == 'i' && strlen(argv[1]) == 2)
             {
                 char *fileName = argv[2];
-                ClassFile *classFile = ReadModule::read_file(fileName);
+                ClassFile *classFile = ReadModule::read_file(fileName, false);
                 if (classFile == nullptr)
                     return 0;
 

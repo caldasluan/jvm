@@ -51,8 +51,6 @@ MethodInfo *getMethod(ClassFile *class_file, std::string method_name, std::strin
 
     ClassFile *original_class_file = class_file;
 
-    runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
-
     while (class_file->super_class != 0)
     {
         for (MethodInfo &method : class_file->methods)
@@ -78,7 +76,7 @@ MethodInfo *getMethod(ClassFile *class_file, std::string method_name, std::strin
         class_file = interface_vec[i];
         for (uint16_t index : class_file->interfaces)
         {
-            ClassFile *interface = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+            ClassFile *interface = runtime.classMap[class_file->get_string_constant_pool(index)]->class_file;
             interface_vec.push_back(interface);
             for (MethodInfo &method : interface->methods)
             {
@@ -2220,27 +2218,28 @@ void invokevirtual(Frame &frame)
         }
     }
 
-    if (reference != 0)
+    if (reference == 0)
     {
-        std::string ref_class_name(((instance_t *)runtime.instances[args.back()])->type);
+        frame.exception = true;
+        return;
+    }
 
-        ClassInfo *class_info = ExecModule::prepare_class(runtime, ref_class_name);
-        if (class_info != nullptr)
+    std::string ref_class_name(((instance_t *)runtime.instances[args.back()])->type);
+
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, ref_class_name);
+    if (class_info != nullptr)
+    {
+        MethodInfo *method = getMethod(class_info->class_file, method_name, method_desc);
+        if (method != nullptr)
         {
-            MethodInfo *method = getMethod(class_info->class_file, method_name, method_desc);
-            if (method != nullptr)
-            {
-                runtime.stack_frames.push(new Frame(class_info, *method));
+            runtime.stack_frames.push(new Frame(class_info, *method));
 
-                for (int size = args.size(); args.size() > 0; args.pop_back())
-                    runtime.stack_frames.top()->local_variables[size - args.size()] = args.back();
-            }
+            for (int size = args.size(); args.size() > 0; args.pop_back())
+                runtime.stack_frames.top()->local_variables[size - args.size()] = args.back();
         }
-        else
-            frame.pc -= 3;
     }
     else
-        frame.exception = true;
+        frame.pc -= 3;
 }
 
 // ToDo corrigir char
@@ -2255,12 +2254,6 @@ void invokespecial(Frame &frame)
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
-
-    if (class_name.compare("java/lang/Object") == 0)
-    {
-        frame.operand_stack.pop();
-        return;
-    }
 
     Runtime &runtime = Runtime::getInstance();
 
