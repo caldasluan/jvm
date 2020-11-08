@@ -123,7 +123,7 @@ ClassFile* ReadModule::read_file(const char* file_name) {
     
     if(!fp)
     {
-        printf("Não foi possivel ler o arquivo!\n");
+        printf("Nao foi possivel ler o arquivo!\n");
         return nullptr;
     }
 
