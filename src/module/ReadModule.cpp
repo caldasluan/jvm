@@ -131,6 +131,7 @@ ClassFile* ReadModule::read_file(const char* file_name) {
     classFile->minor_version = u2Read(fp);
     classFile->major_version = u2Read(fp);
     classFile->constant_pool_count = u2Read(fp);
+    printf("");
 
     fill_constant_pool(fp, classFile->constant_pool_count, classFile->constant_pool);
 
