@@ -119,7 +119,7 @@ void fill_method_info(FILE* file, uint16_t size, std::vector<MethodInfo>& method
 ClassFile* ReadModule::read_file(const char* file_name) {
     ClassFile *classFile = new ClassFile;
     FILE* fp;
-    fp = fopen(file_name, "r");
+    fp = fopen(file_name, "rb");
     
     if(!fp)
     {
@@ -131,7 +131,6 @@ ClassFile* ReadModule::read_file(const char* file_name) {
     classFile->minor_version = u2Read(fp);
     classFile->major_version = u2Read(fp);
     classFile->constant_pool_count = u2Read(fp);
-    printf("");
 
     fill_constant_pool(fp, classFile->constant_pool_count, classFile->constant_pool);
 
