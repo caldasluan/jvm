@@ -2107,7 +2107,7 @@ void invokestatic(Frame &frame)
 
                 runtime.stack_frames.push(new Frame(class_info, method));
 
-                for (; index >= 0; index--)
+                for (; index > 0; index--)
                     runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
             }
         }
