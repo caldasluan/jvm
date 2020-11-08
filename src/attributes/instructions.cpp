@@ -1762,7 +1762,7 @@ void getfield(Frame &frame)
         if (field_it != class_info->fieldIndexByName.end())
         {
             // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
-            uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
+            uint8_t *bytes = (uint8_t *)(((instance_t*)runtime.instances[reference])->bytes + field_it->second);
             if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
                 uint32_t word;
@@ -1790,7 +1790,20 @@ void getfield(Frame &frame)
 void putfield(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
-    uint32_t reference = get_int(frame);
+    
+    uint32_t reference;
+    uint32_t word1, word2;
+    
+    std::string field_desc = frame.class_info->class_file->get_string_constant_pool(field_ref_index, 2);
+    if(field_desc[0] == 'D' || field_desc[0] == 'J')
+    {
+        word1 = get_int(frame);
+        word2 = get_int(frame);
+    }
+    else
+        word1 = get_int(frame);
+    
+    reference = get_int(frame);
 
     // TODO precisa dar throw NullPointerException
     if(reference == 0)
@@ -1815,19 +1828,15 @@ void putfield(Frame &frame)
         if (field_it != class_info->fieldIndexByName.end())
         {
             // TODO implementar checagem de acesso e tipo, tem outros lugares onde precisa ser implementado tambem.
-            uint8_t *bytes = (uint8_t *)(runtime.instances[reference] + field_it->second);
+            uint8_t *bytes = (uint8_t *)(((instance_t*)runtime.instances[reference])->bytes + field_it->second);
             if (field_size <= 4) // campo com 1, 2 ou 4 bytes
             {
-                uint32_t word = frame.operand_stack.top();
-                memcpy(bytes, &word + (sizeof(uint32_t) - field_size), field_size);
-                frame.operand_stack.pop();
+                memcpy(bytes, &word1 + (sizeof(uint32_t) - field_size), field_size);
             }
             else // campo com 8 bytes
             {
-                memcpy(bytes, &frame.operand_stack.top(), 4);
-                frame.operand_stack.pop();
-                memcpy(bytes + 4, &frame.operand_stack.top(), 4);
-                frame.operand_stack.pop();
+                memcpy(bytes, &word1, 4);
+                memcpy(bytes + 4, &word2, 4);
             }
         }
         else
@@ -1841,10 +1850,8 @@ void putfield(Frame &frame)
         frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
 }
 
-// ToDo corrigir char
 // TODO implementar regras de acesso
 // TODO implementar busca em superclasses e interfaces(fudeu)
-// TODO implementar threading? (precisa?)
 // TODO "Dispatch based on class" significa que temos que salvar a classe exata instanciada pra saber qual usar aqui.
 // TODO testar
 void invokevirtual(Frame &frame)
@@ -1921,7 +1928,6 @@ void invokevirtual(Frame &frame)
         }
     }
 
-    printf("%s\n", class_name.c_str());
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
     if (class_info != nullptr)
     {
@@ -1933,8 +1939,7 @@ void invokevirtual(Frame &frame)
             if (class_name_equal && class_desc_equal)
             {
                 std::vector<uint32_t> args;
-                int index = 0;
-                for (int i = 1; method_desc[i] != ')'; i++, index++)
+                for (int i = 1; method_desc[i] != ')'; i++)
                 {
                     if (method_desc[i] == 'L')
                     {
@@ -1966,8 +1971,8 @@ void invokevirtual(Frame &frame)
 
                 runtime.stack_frames.push(new Frame(class_info, method));
 
-                for (; index >= 0; index--)
-                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
+                for(int size = args.size(); args.size() > 0; args.pop_back())
+                    runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
             }
         }
     }
@@ -1990,6 +1995,7 @@ void invokespecial(Frame &frame)
 
     if(class_name.compare("java/lang/Object") == 0)
     {
+        frame.operand_stack.pop();
         return;
     }
 
@@ -2006,8 +2012,7 @@ void invokespecial(Frame &frame)
             if (class_name_equal && class_desc_equal)
             {
                 std::vector<uint32_t> args;
-                int index = 0;
-                for (int i = 1; method_desc[i] != ')'; i++, index++)
+                for (int i = 1; method_desc[i] != ')'; i++)
                 {
                     if (method_desc[i] == 'L')
                     {
@@ -2039,14 +2044,14 @@ void invokespecial(Frame &frame)
 
                 runtime.stack_frames.push(new Frame(class_info, method));
 
-                for (; index >= 0; index--)
-                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
+                for(int size = args.size(); args.size() > 0; args.pop_back())
+                    runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
             }
         }
     }
     else
         frame.pc -= 3;
-}
+} 
 
 void invokestatic(Frame &frame)
 {
@@ -2076,8 +2081,7 @@ void invokestatic(Frame &frame)
             if (class_name_equal && class_desc_equal)
             {
                 std::vector<uint32_t> args;
-                int index = 0;
-                for (int i = 1; method_desc[i] != ')'; i++, index++)
+                for (int i = 1; method_desc[i] != ')'; i++)
                 {
                     if (method_desc[i] == 'L')
                     {
@@ -2107,8 +2111,8 @@ void invokestatic(Frame &frame)
 
                 runtime.stack_frames.push(new Frame(class_info, method));
 
-                for (; index > 0; index--)
-                    runtime.stack_frames.top()->local_variables[args.size() - index - 1] = args[index];
+                for(int size = args.size(); args.size() > 0; args.pop_back())
+                    runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
             }
         }
     }
@@ -2116,7 +2120,121 @@ void invokestatic(Frame &frame)
         frame.pc -= 3;
 }
 
-void invokeinterface(Frame &frame) {}
+MethodInfo *getInterfaceMethod(ClassFile *class_file, std::string method_name, std::string method_desc)
+{
+    Runtime& runtime = Runtime::getInstance();
+
+    ClassFile *original_class_file = class_file;
+
+    runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+
+    while(class_file->super_class != 0)
+    {
+        for (MethodInfo &method : class_file->methods)
+        {
+            bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+            bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+            
+            if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400)
+            {
+                return &method;
+            }
+        }
+        class_file = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+    }
+
+    std::vector<ClassFile*> interface_vec;
+    interface_vec.push_back(original_class_file);
+
+    for(int i = 0; i < interface_vec.size(); i++)
+    {
+        class_file = interface_vec[i];
+        for(uint16_t index : class_file->interfaces)
+        {
+            ClassFile *interface = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+            interface_vec.push_back(interface);
+            for(MethodInfo &method: interface->methods)
+            {
+                bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+                bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+                if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400)
+                {
+                    return &method;
+                }
+            }
+        }
+    }
+
+
+    return nullptr;
+}
+
+void invokeinterface(Frame &frame)
+{
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    frame.pc += 2;
+
+    std::string interface_name = frame.class_info->class_file->get_string_constant_pool(index);
+    std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
+    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
+    
+    Runtime &runtime = Runtime::getInstance();
+
+    std::vector<uint32_t> args;
+    for (int i = 1; method_desc[i] != ')'; i++)
+    {
+        if (method_desc[i] == 'L')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] != ';')
+                ;
+        }
+        else if (method_desc[i] == '[')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] == '[')
+                ;
+            if (method_desc[i] == 'L')
+                while (method_desc[++i] != ';')
+                    ;
+            else
+                i++;
+        }
+        else if (method_desc[i] == 'D' || method_desc[i] == 'J')
+        {
+            args.push_back(get_int(frame));
+            args.push_back(get_int(frame));
+        }
+        else
+            args.push_back(get_int(frame));
+    }
+
+    uint32_t reference = get_int(frame);
+    
+    args.push_back(reference);
+
+    std::string class_name(((instance_t*)runtime.instances[reference])->type);
+
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+
+    if (class_info != nullptr)
+    {
+        MethodInfo *method = getInterfaceMethod(class_info->class_file, method_name, method_desc);
+
+        if(method != nullptr)
+        {
+            runtime.stack_frames.push(new Frame(class_info, *method));
+            
+            for(int size = args.size(); args.size() > 0; args.pop_back())
+                runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
+        }
+        else
+            ; // TODO exception caso nao ache
+    }
+    else
+        frame.pc -= 3;
+}
+
 void invokedynamic(Frame &frame) {}
 
 void c_new(Frame &frame)
@@ -2138,7 +2256,13 @@ void c_new(Frame &frame)
     {
         frame.operand_stack.push(runtime.instances.size());
         if (class_info->fieldBytesAmmount > 0)
-            runtime.instances.push_back(new uint8_t[class_info->fieldBytesAmmount]{0});
+        {
+            instance_t *inst = new instance_t;
+            inst->bytes = new uint8_t[class_info->fieldBytesAmmount]{0};
+            inst->type = new char[class_name.length() + 1];
+            strcpy(inst->type, class_name.c_str());
+            runtime.instances.push_back((uint8_t*)inst);
+        }
         else
             runtime.instances.push_back(nullptr); // TODO Isso ta certo? Eh melhor nao adicionar nada?
                                                   //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
@@ -2186,8 +2310,9 @@ void anewarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
     uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
 
-    ExecModule::prepare_class(runtime, frame.class_info->class_file->get_string_constant_pool(index));
+    ExecModule::prepare_class(runtime, class_name);
 
     uint32_t count = get_int(frame);
     array_t *ar = new array_t;
@@ -2213,9 +2338,25 @@ void athrow(Frame &frame)
 }
 
 void checkcast(Frame &frame)
-
 {
-    frame.pc += 2;
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint32_t reference = get_int(frame);
+    if(reference == 0)
+    {
+        frame.operand_stack.push(0);
+        return;
+    }
+    
+    Runtime &runtime = Runtime::getInstance();
+
+    std::string resolved_type = frame.class_info->class_file->get_string_constant_pool(index);
+    char *obj_type = ((instance_t*)runtime.instances[reference])->type;
+
+    if(obj_type[0] != '[')
+    {
+        ClassInfo *class_info = ExecModule::prepare_class(runtime, resolved_type);
+    }
+    frame.operand_stack.push(reference);
 }
 
 void instanceof(Frame & frame)

@@ -9,6 +9,17 @@
 #include "ClassInfo.h"
 
 
+typedef struct {
+    uint8_t *bytes;
+    uint32_t size;
+    uint32_t lenght;
+} array_t;
+
+typedef struct {
+    uint8_t *bytes;
+    char *type;
+} instance_t;
+
 class Runtime
 {
 public:

@@ -13,5 +13,11 @@ public class Parent {
   public Parent()
   {
     MainAct.maxTimesRan = 4;
-  }  
+  }
+  
+  public void po()
+  {
+		System.out.print("VSF ");
+		System.out.println(2);
+  }
 }

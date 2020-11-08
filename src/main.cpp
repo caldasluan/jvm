@@ -19,7 +19,6 @@ int main(int argc, char *argv[])
         }
         else
         {
-
             char *fileName = argv[1];
             ExecModule::initialize_jvm(fileName, argc, argv);
         }

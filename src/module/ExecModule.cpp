@@ -3,21 +3,21 @@
 #include "../model/Frame.h"
 #include "../attributes/instructions.h"
 
-void mostra(Frame& frame) {
-    printf("\n%s.%s.%d  %s  pilha: %lu\n", frame.class_info->class_file->get_string_constant_pool(frame.class_info->class_file->this_class).c_str(), frame.class_info->class_file->get_string_constant_pool(frame.method->name_index).c_str(), frame.pc, instructions_mnemonics[frame.code->code[frame.pc]].mnemonic, frame.operand_stack.size());
+void mostra(Frame *frame) {
+    printf("\n%s.%s.%d  %s  pilha: %lu\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, instructions_mnemonics[frame->code->code[frame->pc]].mnemonic, frame->operand_stack.size());
     printf("vetor: ");
-    for (int i = 0; i < frame.local_variables.size(); i++) {
-        printf("%d = %d, ", i, frame.local_variables[i]);
+    for (int i = 0; i < frame->local_variables.size(); i++) {
+        printf("%d = %d, ", i, frame->local_variables[i]);
     }
     printf("\n");
-    if (frame.operand_stack.size() > 0) printf("topo pilha: %d\n", frame.operand_stack.top());
+    if (frame->operand_stack.size() > 0) printf("topo pilha: %d\n", frame->operand_stack.top());
 }
 
 void ExecModule::exec_jvm(Runtime &runtime) {
     while (runtime.stack_frames.size() > 0) {
         Frame* frame = runtime.stack_frames.top();
-        // mostra(frame);
-        printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
+        //mostra(frame);
+        //printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
         //getchar();
         instructions_mnemonics[frame->code->code[frame->pc]].execution(*frame);
         frame->pc++;
@@ -95,7 +95,9 @@ void ExecModule::clinit_loaded_classes(Runtime &runtime, ClassInfo *class_info)
     
     for(MethodInfo &method : class_info->class_file->methods)
     {
-        if (class_info->class_file->get_string_constant_pool(method.name_index).compare("<clinit>") == 0 && class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("()V") == 0 && method.access_flags & 0x0008)
+        bool method_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare("<clinit>") == 0;
+        bool method_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare("()V") == 0;
+        if (method_name_equal && method_desc_equal && (method.access_flags & 0x0008 || class_info->class_file->major_version < 51)) // so precisa ser estatica em Java 7+
         {
             // Metodo <clinit> encontrado
             runtime.stack_frames.push(new Frame(class_info, method));

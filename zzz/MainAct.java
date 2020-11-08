@@ -20,10 +20,11 @@ public class MainAct extends Parent implements Runner {
 
 	public void run() {
 		if (timesRan == maxTimesRan) {
-			System.out.printf("Fim\n");
+			System.out.println("Fim");
 		} else {
 			timesRan++;
-			System.out.print("Run number " + timesRan + "\n");
+			System.out.print("Run number ");
+			System.out.println(timesRan);
 			run();
 			return;
 		}
@@ -72,7 +73,9 @@ public class MainAct extends Parent implements Runner {
 		Runner runner = new MainAct();
 		runner.run();
 		MainAct ma = (MainAct)runner;
-		ma.nop();
+
+		Parent p = new MainAct();
+		p.po();
 		
 		test[0] = ma.new Helper();
 
@@ -84,10 +87,16 @@ public class MainAct extends Parent implements Runner {
 		System.out.println(" SeiLa2");
 	}
 
+	public void po()
+	{
+		System.out.print("VSF ");
+		System.out.println(1);
+	}
+
 	public void nop() {}
 	public void pon() {}
 
-	private class Helper
+	public class Helper
 	{
 		public int HelperCode;
 		public Helper()
