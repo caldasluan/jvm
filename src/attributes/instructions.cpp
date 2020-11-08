@@ -44,6 +44,72 @@ double get_double(Frame &frame)
     return xd;
 }
 
+// TODO adicionar throws
+MethodInfo *getMethod(ClassFile *class_file, std::string method_name, std::string method_desc)
+{
+    Runtime& runtime = Runtime::getInstance();
+
+    ClassFile *original_class_file = class_file;
+
+    runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+
+    while(class_file->super_class != 0)
+    {
+        for (MethodInfo &method : class_file->methods)
+        {
+            bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+            bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+            
+            if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400 && ~method.access_flags & 0x0008)
+            {
+                return &method;
+            }
+        }
+        class_file = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+    }
+
+    std::vector<ClassFile*> interface_vec;
+    interface_vec.push_back(original_class_file);
+
+    std::vector<MethodInfo*> int_methods;
+
+    for(int i = 0; i < interface_vec.size(); i++)
+    {
+        class_file = interface_vec[i];
+        for(uint16_t index : class_file->interfaces)
+        {
+            ClassFile *interface = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
+            interface_vec.push_back(interface);
+            for(MethodInfo &method: interface->methods)
+            {
+                bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
+                bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
+                if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400)
+                {
+                    int_methods.push_back(&method);
+                }
+            }
+        }
+    }
+    
+    // TODO ver os throws que faltam.
+    if(int_methods.size() > 1)
+    {
+        // TODO Throw IncompatibleClassChangeError.
+    }
+    else if(int_methods.size() == 0 || int_methods[0]->access_flags & 0x0400)
+    {
+        // TODO Throw AbstractMethodError
+    }
+    else if(int_methods[0]->access_flags & 0x0008)
+    {
+        // TODO Throw IncompatibleClassChangeError
+    }
+
+
+    return nullptr;
+}
+
 uint32_t gera_multiarray(int size_dim[], Runtime &runtime, uint32_t size, uint32_t dimensions)
 {
     if (dimensions > 0)
@@ -1856,13 +1922,44 @@ void putfield(Frame &frame)
 // TODO testar
 void invokevirtual(Frame &frame)
 {
-    uint16_t x = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
 
-    std::string class_name = frame.class_info->class_file->get_string_constant_pool(x);
-    std::string method_name = frame.class_info->class_file->get_string_constant_pool(x, 1);
-    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(x, 2);
+    std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
+    std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
+    std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
 
     Runtime &runtime = Runtime::getInstance();
+
+    std::vector<uint32_t> args;
+    for (int i = 1; method_desc[i] != ')'; i++)
+    {
+        if (method_desc[i] == 'L')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] != ';')
+                ;
+        }
+        else if (method_desc[i] == '[')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] == '[')
+                ;
+            if (method_desc[i] == 'L')
+                while (method_desc[++i] != ';')
+                    ;
+            else
+                i++;
+        }
+        else if (method_desc[i] == 'D' || method_desc[i] == 'J')
+        {
+            args.push_back(get_int(frame));
+            args.push_back(get_int(frame));
+        }
+        else
+            args.push_back(get_int(frame));
+    }
+
+    args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
 
     // Simulação do println
     if (class_name.compare("java/io/PrintStream") == 0)
@@ -1872,108 +1969,59 @@ void invokevirtual(Frame &frame)
             char endln = method_name.compare("println") == 0 ? '\n' : '\0';
             if (method_desc.compare("(C)V") == 0)
             {
-                printf("%c%c", frame.operand_stack.top(), endln);
-                frame.operand_stack.pop();
-                frame.operand_stack.pop();
+                printf("%c%c", args[0], endln);
             }
             else if (method_desc.compare("(I)V") == 0)
             {
-                printf("%d%c", frame.operand_stack.top(), endln);
-                frame.operand_stack.pop();
-                frame.operand_stack.pop();
+                printf("%d%c", args[0], endln);
             }
             else if (method_desc.compare("(J)V") == 0)
             {
-                uint32_t a = frame.operand_stack.top();
-                frame.operand_stack.pop();
-                uint64_t b = frame.operand_stack.top();
-                frame.operand_stack.pop();
+                uint32_t a = args[0];
+                uint64_t b = args[1];
                 printf("%lld%c", (b << 32) + (long long)a, endln);
-                frame.operand_stack.pop();
             }
             else if (method_desc.compare("(F)V") == 0)
             {
-                uint32_t a = frame.operand_stack.top();
-                frame.operand_stack.pop();
+                uint32_t a = args[0];
                 float f;
                 memcpy(&f, &a, sizeof(float));
                 printf("%f%c", f, endln);
-                frame.operand_stack.pop();
             }
             else if (method_desc.compare("(D)V") == 0)
             {
-                uint64_t a = frame.operand_stack.top();
-                frame.operand_stack.pop();
-                uint64_t b = frame.operand_stack.top();
-                frame.operand_stack.pop();
+                uint64_t a = args[0];
+                uint64_t b = args[1];
                 b = (b << 32) | a;
                 double d;
                 memcpy(&d, &b, sizeof(double));
                 printf("%lf%c", d, endln);
-                frame.operand_stack.pop();
             }
             else if (method_desc.compare("()V") == 0)
             {
                 printf("\n");
-                frame.operand_stack.pop();
             }
             else if (method_desc.compare("(Ljava/lang/String;)V") == 0)
             {
-                printf("%s%c", (char *)runtime.instances[get_int(frame)], endln);
-                frame.operand_stack.pop();
+                printf("%s%c", (char *)runtime.instances[args[0]], endln);
             }
             else
                 printf("invokevirtual FUNCAO DESCONHECIDA: %s.%s <%s>\n", class_name.c_str(), method_name.c_str(), method_desc.c_str());
             return;
         }
     }
+    std::string ref_class_name(((instance_t*)runtime.instances[args.back()])->type);
 
-    ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, ref_class_name);
     if (class_info != nullptr)
     {
-        for (MethodInfo &method : class_info->class_file->methods)
+        MethodInfo* method = getMethod(class_info->class_file, method_name, method_desc);
+        if(method != nullptr)
         {
-            bool class_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
-            bool class_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
-            
-            if (class_name_equal && class_desc_equal)
-            {
-                std::vector<uint32_t> args;
-                for (int i = 1; method_desc[i] != ')'; i++)
-                {
-                    if (method_desc[i] == 'L')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] != ';')
-                            ;
-                    }
-                    else if (method_desc[i] == '[')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] == '[')
-                            ;
-                        if (method_desc[i] == 'L')
-                            while (method_desc[++i] != ';')
-                                ;
-                        else
-                            i++;
-                    }
-                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
-                    {
-                        args.push_back(get_int(frame));
-                        args.push_back(get_int(frame));
-                    }
-                    else
-                        args.push_back(get_int(frame));
-                }
+            runtime.stack_frames.push(new Frame(class_info, *method));
 
-                args.push_back(get_int(frame)); // Adiciona objectref nos argumentos.
-
-                runtime.stack_frames.push(new Frame(class_info, method));
-
-                for(int size = args.size(); args.size() > 0; args.pop_back())
-                    runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
-            }
+            for(int size = args.size(); args.size() > 0; args.pop_back())
+                runtime.stack_frames.top()->local_variables[size-args.size()] = args.back();
         }
     }
     else
@@ -2078,7 +2126,7 @@ void invokestatic(Frame &frame)
             bool class_name_equal = class_info->class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
             bool class_desc_equal = class_info->class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
             
-            if (class_name_equal && class_desc_equal)
+            if (class_name_equal && class_desc_equal && method.access_flags & 0x0008)
             {
                 std::vector<uint32_t> args;
                 for (int i = 1; method_desc[i] != ')'; i++)
@@ -2118,55 +2166,6 @@ void invokestatic(Frame &frame)
     }
     else
         frame.pc -= 3;
-}
-
-MethodInfo *getInterfaceMethod(ClassFile *class_file, std::string method_name, std::string method_desc)
-{
-    Runtime& runtime = Runtime::getInstance();
-
-    ClassFile *original_class_file = class_file;
-
-    runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
-
-    while(class_file->super_class != 0)
-    {
-        for (MethodInfo &method : class_file->methods)
-        {
-            bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
-            bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
-            
-            if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400)
-            {
-                return &method;
-            }
-        }
-        class_file = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
-    }
-
-    std::vector<ClassFile*> interface_vec;
-    interface_vec.push_back(original_class_file);
-
-    for(int i = 0; i < interface_vec.size(); i++)
-    {
-        class_file = interface_vec[i];
-        for(uint16_t index : class_file->interfaces)
-        {
-            ClassFile *interface = runtime.classMap[class_file->get_string_constant_pool(class_file->super_class)]->class_file;
-            interface_vec.push_back(interface);
-            for(MethodInfo &method: interface->methods)
-            {
-                bool class_name_equal = class_file->get_string_constant_pool(method.name_index).compare(method_name) == 0;
-                bool class_desc_equal = class_file->get_string_constant_pool(method.descriptor_index).compare(method_desc) == 0;
-                if (class_name_equal && class_desc_equal && ~method.access_flags & 0x0400)
-                {
-                    return &method;
-                }
-            }
-        }
-    }
-
-
-    return nullptr;
 }
 
 void invokeinterface(Frame &frame)
@@ -2219,7 +2218,7 @@ void invokeinterface(Frame &frame)
 
     if (class_info != nullptr)
     {
-        MethodInfo *method = getInterfaceMethod(class_info->class_file, method_name, method_desc);
+        MethodInfo *method = getMethod(class_info->class_file, method_name, method_desc);
 
         if(method != nullptr)
         {
