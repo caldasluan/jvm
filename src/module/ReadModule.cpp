@@ -123,13 +123,22 @@ ClassFile* ReadModule::read_file(const char* file_name, bool warn_diff_name) {
     
     if(!fp)
     {
-        printf("Nao foi possivel ler o arquivo!\n");
+        delete classFile;
+        puts("Nao foi possivel ler o arquivo!");
         return nullptr;
     }
 
     classFile->magic = u4Read(fp);
     classFile->minor_version = u2Read(fp);
     classFile->major_version = u2Read(fp);
+
+    if(classFile->major_version > 52)
+    {
+        delete classFile;
+        puts("Versao da classe nao suportada");
+        return nullptr;
+    }
+
     classFile->constant_pool_count = u2Read(fp);
 
     fill_constant_pool(fp, classFile->constant_pool_count, classFile->constant_pool);
@@ -141,7 +150,7 @@ ClassFile* ReadModule::read_file(const char* file_name, bool warn_diff_name) {
     std::string sFileName(file_name);
     if(warn_diff_name && sFileName.rfind(className, sFileName.find_last_of("/\\") + 1) == std::string::npos)
     {
-        printf("Warning! Class name is different from file name!\n");
+        puts("Aviso! Nome da classe e do arquivo sao diferentes!");
     }
 
     classFile->super_class = u2Read(fp);

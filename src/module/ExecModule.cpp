@@ -24,41 +24,21 @@ void ExecModule::exec_jvm(Runtime &runtime)
         Frame *frame = runtime.stack_frames.top();
         mostra(frame);
         // printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
-        getchar();
+        //getchar();
         try
         {
             instructions_mnemonics[frame->code->code[frame->pc]].execution(*frame);
-            if (!frame->exception)
-            {
-                frame->pc++;
-
-                if (frame->pc >= frame->code->code_length)
-                {
-                    if (frame->ret_words == 1)
-                    {
-                        uint32_t ret = frame->operand_stack.top();
-                        runtime.stack_frames.pop();
-                        runtime.stack_frames.top()->operand_stack.push(ret);
-                    }
-                    else if (frame->ret_words == 2)
-                    {
-                        uint32_t ret1 = frame->operand_stack.top();
-                        frame->operand_stack.pop();
-                        uint32_t ret2 = frame->operand_stack.top();
-                        runtime.stack_frames.pop();
-                        runtime.stack_frames.top()->operand_stack.push(ret2);
-                        runtime.stack_frames.top()->operand_stack.push(ret1);
-                    }
-                    else
-                        runtime.stack_frames.pop();
-                }
-            }
-            else
-            {
-                exception_jvm(runtime);
-            }
         }
         catch (int e)
+        {
+            exception_jvm(runtime);
+        }
+
+        if (!frame->exception)
+        {
+            frame->pc++;
+        }
+        else
         {
             exception_jvm(runtime);
         }
@@ -77,6 +57,7 @@ void ExecModule::exception_jvm(Runtime &runtime)
                 return;
             }
         }
+        delete frame;
         runtime.stack_frames.pop();
         if (runtime.stack_frames.size() > 0)
             runtime.stack_frames.top()->pc--;
@@ -104,6 +85,11 @@ ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
 ClassInfo *ExecModule::read_load_class(Runtime &runtime, const char *fileName)
 {
     ClassFile *classFile = ReadModule::read_file(fileName, false);
+
+    if(classFile == nullptr)
+    {
+        return nullptr;
+    }
 
     runtime.classMap[classFile->get_string_constant_pool(classFile->this_class)] = nullptr;
 
@@ -160,6 +146,11 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
 
     ClassInfo *class_info = ExecModule::read_load_class(runtime, file_name);
 
+    if(class_info == nullptr)
+    {
+        return;
+    }
+
     MethodInfo method_main;
 
     for (MethodInfo &method : class_info->class_file->methods)
@@ -204,4 +195,26 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
     ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
 
     exec_jvm(runtime);
+
+    while(runtime.stack_frames.size() > 0)
+    {
+        delete runtime.stack_frames.top();
+        runtime.stack_frames.pop();
+    }
+    
+    for(uint8_t *i : runtime.instances)
+    {
+        if(i == nullptr)
+            continue;
+        if(((instance_t*)i)->bytes != nullptr)
+            delete[] ((instance_t*)i)->bytes;
+        delete[] i;
+    }
+
+    for(auto it = runtime.classMap.begin(); it != runtime.classMap.end();it++)
+    {
+        delete it->second->class_file;
+        delete it->second->staticBytes;
+        delete it->second;
+    }
 }

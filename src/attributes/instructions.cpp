@@ -109,6 +109,35 @@ std::pair<ClassInfo*, MethodInfo*> getMethod(ClassInfo *class_info, std::string 
     return std::make_pair(nullptr, nullptr);
 }
 
+void getArgs(std::vector<uint32_t> &args, std::string &method_desc, Frame &frame)
+{
+    for (int i = 1; method_desc[i] != ')'; i++)
+    {
+        if (method_desc[i] == 'L')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] != ';')
+                ;
+        }
+        else if (method_desc[i] == '[')
+        {
+            args.push_back(get_int(frame));
+            while (method_desc[++i] == '[')
+                ;
+            if (method_desc[i] == 'L')
+                while (method_desc[++i] != ';')
+                    ;
+        }
+        else if (method_desc[i] == 'D' || method_desc[i] == 'J')
+        {
+            args.push_back(get_int(frame));
+            args.push_back(get_int(frame));
+        }
+        else
+            args.push_back(get_int(frame));
+    }
+}
+
 uint32_t gera_multiarray(int size_dim[], Runtime &runtime, uint32_t size, uint32_t dimensions)
 {
     if (dimensions > 0)
@@ -1868,47 +1897,68 @@ void lookupswitch(Frame &frame)
         int32_t offset = (frame.code->code[++frame.pc] << 24) | (frame.code->code[++frame.pc] << 16) | (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
         if (key == switch_key)
         {
-            frame.pc = instruction_pc + offset;
+            frame.pc = instruction_pc + offset - 1;
             return;
         }
     }
 
-    frame.pc = instruction_pc + def;
+    frame.pc = instruction_pc + def - 1;
 }
 
 void ireturn(Frame &frame)
 {
-    frame.ret_words = 1;
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t ret = get_int(frame);
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
+    runtime.stack_frames.top()->operand_stack.push(ret);
 }
 
 void lreturn(Frame &frame)
 {
-    frame.ret_words = 2;
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t ret1 = get_int(frame);
+    uint32_t ret2 = get_int(frame);
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
+    runtime.stack_frames.top()->operand_stack.push(ret2);
+    runtime.stack_frames.top()->operand_stack.push(ret1);
 }
 
 void freturn(Frame &frame)
 {
-    frame.ret_words = 1;
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t ret = get_int(frame);
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
+    runtime.stack_frames.top()->operand_stack.push(ret);
 }
 
 void dreturn(Frame &frame)
 {
-    frame.ret_words = 2;
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t ret1 = get_int(frame);
+    uint32_t ret2 = get_int(frame);
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
+    runtime.stack_frames.top()->operand_stack.push(ret2);
+    runtime.stack_frames.top()->operand_stack.push(ret1);
 }
 
 void areturn(Frame &frame)
 {
-    frame.ret_words = 1;
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    uint32_t ret = get_int(frame);
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
+    runtime.stack_frames.top()->operand_stack.push(ret);
 }
 
 void c_return(Frame &frame)
 {
-    frame.pc = frame.code->code_length;
+    Runtime &runtime = Runtime::getInstance();
+    delete runtime.stack_frames.top();
+    runtime.stack_frames.pop();
 }
 
 // TODO interromper a jvm e imprimir o erro.
@@ -2138,33 +2188,7 @@ void invokevirtual(Frame &frame)
     Runtime &runtime = Runtime::getInstance();
 
     std::vector<uint32_t> args;
-    for (int i = 1; method_desc[i] != ')'; i++)
-    {
-        if (method_desc[i] == 'L')
-        {
-            args.push_back(get_int(frame));
-            while (method_desc[++i] != ';')
-                ;
-        }
-        else if (method_desc[i] == '[')
-        {
-            args.push_back(get_int(frame));
-            while (method_desc[++i] == '[')
-                ;
-            if (method_desc[i] == 'L')
-                while (method_desc[++i] != ';')
-                    ;
-            else
-                i++;
-        }
-        else if (method_desc[i] == 'D' || method_desc[i] == 'J')
-        {
-            args.push_back(get_int(frame));
-            args.push_back(get_int(frame));
-        }
-        else
-            args.push_back(get_int(frame));
-    }
+    getArgs(args, method_desc, frame);
 
     uint32_t reference = get_int(frame);
     args.push_back(reference); // Adiciona objectref nos argumentos.
@@ -2255,6 +2279,15 @@ void invokespecial(Frame &frame)
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
     std::string method_name = frame.class_info->class_file->get_string_constant_pool(index, 1);
     std::string method_desc = frame.class_info->class_file->get_string_constant_pool(index, 2);
+    
+    if(class_name.compare("java/lang/Exception") == 0)
+    {
+        std::vector<uint32_t> args;
+        getArgs(args, method_desc, frame);
+
+        uint32_t reference = get_int(frame);
+        return;
+    }
 
     Runtime &runtime = Runtime::getInstance();
 
@@ -2269,47 +2302,22 @@ void invokespecial(Frame &frame)
             if (class_name_equal && class_desc_equal)
             {
                 std::vector<uint32_t> args;
-                for (int i = 1; method_desc[i] != ')'; i++)
-                {
-                    if (method_desc[i] == 'L')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] != ';')
-                            ;
-                    }
-                    else if (method_desc[i] == '[')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] == '[')
-                            ;
-                        if (method_desc[i] == 'L')
-                            while (method_desc[++i] != ';')
-                                ;
-                        else
-                            i++;
-                    }
-                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
-                    {
-                        args.push_back(get_int(frame));
-                        args.push_back(get_int(frame));
-                    }
-                    else
-                        args.push_back(get_int(frame));
-                }
+                getArgs(args, method_desc, frame);
 
                 uint32_t reference = get_int(frame);
 
-                if (reference != 0)
+                if (reference == 0)
                 {
-                    args.push_back(reference); // Adiciona objectref nos argumentos.
-
-                    runtime.stack_frames.push(new Frame(class_info, method));
-
-                    for (int size = args.size(); args.size() > 0; args.pop_back())
-                        runtime.stack_frames.top()->local_variables[size - args.size()] = args.back();
-                }
-                else
                     frame.exception = true;
+                    return;
+                }
+                
+                args.push_back(reference); // Adiciona objectref nos argumentos.
+
+                runtime.stack_frames.push(new Frame(class_info, method));
+
+                for (int size = args.size(); args.size() > 0; args.pop_back())
+                    runtime.stack_frames.top()->local_variables[size - args.size()] = args.back();
             }
         }
     }
@@ -2345,33 +2353,7 @@ void invokestatic(Frame &frame)
             if (class_name_equal && class_desc_equal && method.access_flags & 0x0008)
             {
                 std::vector<uint32_t> args;
-                for (int i = 1; method_desc[i] != ')'; i++)
-                {
-                    if (method_desc[i] == 'L')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] != ';')
-                            ;
-                    }
-                    else if (method_desc[i] == '[')
-                    {
-                        args.push_back(get_int(frame));
-                        while (method_desc[++i] == '[')
-                            ;
-                        if (method_desc[i] == 'L')
-                            while (method_desc[++i] != ';')
-                                ;
-                        else
-                            i++;
-                    }
-                    else if (method_desc[i] == 'D' || method_desc[i] == 'J')
-                    {
-                        args.push_back(get_int(frame));
-                        args.push_back(get_int(frame));
-                    }
-                    else
-                        args.push_back(get_int(frame));
-                }
+                getArgs(args, method_desc, frame);
 
                 runtime.stack_frames.push(new Frame(class_info, method));
 
@@ -2396,33 +2378,7 @@ void invokeinterface(Frame &frame)
     Runtime &runtime = Runtime::getInstance();
 
     std::vector<uint32_t> args;
-    for (int i = 1; method_desc[i] != ')'; i++)
-    {
-        if (method_desc[i] == 'L')
-        {
-            args.push_back(get_int(frame));
-            while (method_desc[++i] != ';')
-                ;
-        }
-        else if (method_desc[i] == '[')
-        {
-            args.push_back(get_int(frame));
-            while (method_desc[++i] == '[')
-                ;
-            if (method_desc[i] == 'L')
-                while (method_desc[++i] != ';')
-                    ;
-            else
-                i++;
-        }
-        else if (method_desc[i] == 'D' || method_desc[i] == 'J')
-        {
-            args.push_back(get_int(frame));
-            args.push_back(get_int(frame));
-        }
-        else
-            args.push_back(get_int(frame));
-    }
+    getArgs(args, method_desc, frame);
 
     uint32_t reference = get_int(frame);
 
@@ -2465,7 +2421,7 @@ void c_new(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
-    if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0)
+    if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0 || class_name.compare("java/lang/Exception") == 0)
     {
         frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
         return;
@@ -2475,17 +2431,16 @@ void c_new(Frame &frame)
     if (class_info != nullptr)
     {
         frame.operand_stack.push(runtime.instances.size());
+        instance_t *inst = new instance_t;
+        inst->type = new char[class_name.length() + 1];
+        strcpy(inst->type, class_name.c_str());
+
         if (class_info->fieldBytesAmmount > 0)
-        {
-            instance_t *inst = new instance_t;
             inst->bytes = new uint8_t[class_info->fieldBytesAmmount]{0};
-            inst->type = new char[class_name.length() + 1];
-            strcpy(inst->type, class_name.c_str());
-            runtime.instances.push_back((uint8_t *)inst);
-        }
         else
-            runtime.instances.push_back(nullptr); // TODO Isso ta certo? Eh melhor nao adicionar nada?
-                                                  //Se n adicionar nada aqui tem que botar outra coisa no operand_stack, por exemplo 0, ou vai dar erro depois.
+            inst->bytes = nullptr;
+
+        runtime.instances.push_back((uint8_t *)inst);
     }
     else
         frame.pc -= 3;
@@ -2570,37 +2525,107 @@ void arraylength(Frame &frame)
     }
 }
 
-void athrow(Frame &frame) {}
+void athrow(Frame &frame)
+{
+    frame.exception = true;
+}
+
+bool getCast(Runtime &runtime, std::string obj_type, std::string resolved_type)
+{
+    if(resolved_type.compare("java/lang/Object") == 0)
+    {
+        return true;
+    }
+
+    ClassInfo *class_info = ExecModule::prepare_class(runtime, obj_type), *cur_class_info = class_info;
+    if (obj_type[0] != '[')
+    {
+        do
+        {
+            if(cur_class_info->class_file->get_string_constant_pool(cur_class_info->class_file->this_class).compare(resolved_type) == 0)
+            {
+                return true;
+            }
+            cur_class_info = runtime.classMap[cur_class_info->class_file->get_string_constant_pool(cur_class_info->class_file->super_class)];
+        }
+        while(cur_class_info->class_file->super_class != 0);
+        
+        std::vector<ClassInfo*> interfaces;
+        interfaces.push_back(class_info);
+
+        for(int i = 0; i < interfaces.size(); i++)
+        {
+            for(uint16_t interface : interfaces[i]->class_file->interfaces)
+            {
+                ClassInfo *interface_info = runtime.classMap[interfaces[i]->class_file->get_string_constant_pool(interface)];
+                if(interface_info->class_file->get_string_constant_pool(interface_info->class_file->this_class).compare(resolved_type) == 0)
+                {
+                    return true;
+                }
+                interfaces.push_back(interface_info);
+            }
+        }
+    }
+    else
+    {
+        if(resolved_type[0] != '[')
+        {
+            return false;
+        }
+        else
+        {
+            std::string obj_type2(obj_type, 1), resolved_type2(resolved_type, 1);
+            return getCast(runtime, obj_type2, resolved_type2);
+        }
+    }
+    return false;
+}
 
 void checkcast(Frame &frame)
 {
     uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     uint32_t reference = get_int(frame);
+
     if (reference == 0)
     {
-        frame.operand_stack.push(0);
+        frame.exception = true;
         return;
     }
 
     Runtime &runtime = Runtime::getInstance();
 
     std::string resolved_type = frame.class_info->class_file->get_string_constant_pool(index);
-    char *obj_type = ((instance_t *)runtime.instances[reference])->type;
+    std::string obj_type(((instance_t *)runtime.instances[reference])->type);
 
-    if (obj_type[0] != '[')
-    {
-        ClassInfo *class_info = ExecModule::prepare_class(runtime, resolved_type);
-    }
-    frame.operand_stack.push(reference);
+    if(getCast(runtime, obj_type, resolved_type))
+        frame.operand_stack.push(reference);
+    else
+        frame.exception = true;
 }
 
-void instanceof (Frame & frame)
+void instanceof(Frame& frame)
 {
-    frame.pc += 2;
+    uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
+    uint32_t reference = get_int(frame);
+
+    if(reference == 0)
+    {
+        frame.operand_stack.push(0);
+        return;
+    }
+
+    Runtime &runtime = Runtime::getInstance();
+    std::string resolved_type = frame.class_info->class_file->get_string_constant_pool(index);
+    std::string obj_type(((instance_t *)runtime.instances[reference])->type);
+
+    if(getCast(runtime, obj_type, resolved_type))
+        frame.operand_stack.push(1);
+    else
+        frame.operand_stack.push(0);
 }
 
-void monitorenter(Frame &frame) {}
-void monitorexit(Frame &frame) {}
+void monitorenter(Frame &frame) { frame.operand_stack.pop(); }
+void monitorexit(Frame &frame) { frame.operand_stack.pop(); }
 
 void wide(Frame &frame)
 {
@@ -2646,6 +2671,8 @@ void wide(Frame &frame)
 void multianewarray(Frame &frame)
 {
     Runtime &runtime = Runtime::getInstance();
+
+    uint32_t instruction_pc = frame.pc;
     uint32_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
     uint8_t dimensions = frame.code->code[++frame.pc];
     std::string reference = frame.class_info->class_file->get_string_constant_pool(index);
@@ -2670,22 +2697,28 @@ void multianewarray(Frame &frame)
     }
     else
     {
+        std::string class_name(reference, 1, reference.size() - 2);
+        ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
+        if(class_info == nullptr)
+        {
+            frame.pc = instruction_pc - 1;
+            return;
+        }
         size = 4;
     }
 
     int size_dim[dimensions];
-    bool flag = true;
     for (int i = 0; i < dimensions; i++)
     {
         size_dim[i] = get_int(frame);
-        if (size_dim[i] < 0)
-            flag = false;
+        if(size_dim[i] < 0)
+        {
+            frame.exception = true;
+            return;
+        }
     }
 
-    if (flag)
-        frame.operand_stack.push(gera_multiarray(size_dim, runtime, size, --dimensions));
-    else
-        frame.exception = true;
+    frame.operand_stack.push(gera_multiarray(size_dim, runtime, size, --dimensions));
 }
 
 void ifnull(Frame &frame)
