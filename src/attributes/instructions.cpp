@@ -262,7 +262,6 @@ void ldc(Frame &frame)
     uint8_t tag = frame.class_info->class_file->constant_pool[x].tag;
     if (tag == CpTagConst::CONSTANT_Integer)
     {
-        printf("Ue\n");
         frame.operand_stack.push(frame.class_info->class_file->constant_pool[x].get_int());
     }
     else if (tag == CpTagConst::CONSTANT_Float)
