@@ -139,7 +139,7 @@ ClassFile* ReadModule::read_file(const char* file_name, bool warn_diff_name) {
     
     std::string className = classFile->get_string_constant_pool(classFile->this_class) + ".class";
     std::string sFileName(file_name);
-    if(sFileName.rfind(className, sFileName.find_last_of("/\\") + 1) == std::string::npos)
+    if(warn_diff_name && sFileName.rfind(className, sFileName.find_last_of("/\\") + 1) == std::string::npos)
     {
         printf("Warning! Class name is different from file name!\n");
     }
