@@ -2,7 +2,7 @@ package input.zzz;
 
 import input.zzz.pacote.Parent;
 
-// compile with "javac -source 8 -target 8 zzz/MainAct.java"
+// compile with "javac -source 8 -target 8 input/zzz/MainAct.java"
 
 public class MainAct extends Parent implements Runner {
 

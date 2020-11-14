@@ -11,8 +11,9 @@
 
 typedef struct {
     uint8_t *bytes;
+    char *type;
     uint32_t size;
-    uint32_t lenght;
+    uint32_t length;
 } array_t;
 
 typedef struct {
@@ -27,6 +28,9 @@ public:
     std::vector<uint8_t *> instances;
     std::map<std::string, ClassInfo *> classMap;
 
+    bool verbose, step, watch;
+    uint32_t watchPc;
+
     static Runtime& getInstance() {
         static Runtime instance;
         return instance;
@@ -35,7 +39,7 @@ public:
     Runtime(Runtime const&) = delete;
     void operator=(Runtime const&) = delete;
 private:
-    Runtime()
+    Runtime() : verbose(false), step(false), watch(false)
     {
         instances.push_back(0); // NULL reference.
     };

@@ -22,9 +22,20 @@ void ExecModule::exec_jvm(Runtime &runtime)
     while (runtime.stack_frames.size() > 0)
     {
         Frame *frame = runtime.stack_frames.top();
-        mostra(frame);
-        // printf("%s.%s %d %d(%s)\n", frame->class_info->class_file->get_string_constant_pool(frame->class_info->class_file->this_class).c_str(), frame->class_info->class_file->get_string_constant_pool(frame->method->name_index).c_str(), frame->pc, frame->code->code[frame->pc], instructions_mnemonics[frame->code->code[frame->pc]].mnemonic);
-        //getchar();
+
+        if(runtime.watch && frame->pc == runtime.watchPc)
+        {
+            mostra(frame);
+            getchar();
+        }
+        else
+        {
+            if(runtime.verbose)
+                mostra(frame);
+            if(runtime.step)
+                getchar();
+        }
+
         try
         {
             instructions_mnemonics[frame->code->code[frame->pc]].execution(*frame);
@@ -72,6 +83,9 @@ ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
     {
         uint32_t size = runtime.stack_frames.size();
         ClassInfo *class_info = read_load_class(runtime, (fileName + ".class").c_str());
+        if(class_info == nullptr)
+            return nullptr;
+
         clinit_loaded_classes(runtime, class_info);
         if (size == runtime.stack_frames.size()) // Caso nao tenha sido adicionado nenhum frame com metodo <clinit>
             return class_info;
@@ -97,7 +111,6 @@ ClassInfo *ExecModule::read_load_class(Runtime &runtime, const char *fileName)
 
     std::string super_name;
 
-    // Despreza super class Object
     if (classFile->super_class != 0 && runtime.classMap.find(super_name = classFile->get_string_constant_pool(classFile->super_class)) == runtime.classMap.end())
     {
         if(super_name.compare("java/lang/Object") == 0)
@@ -178,19 +191,31 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
     // Prepara argumentos da main
     array_t *ar = new array_t;
     ar->size = 4;
-    ar->lenght = argc - 2;
-    ar->bytes = new uint8_t[ar->lenght > 1 ? ar->lenght * ar->size : 1]{0};
-    for (int i = 2; i < argc; i++)
+    ar->type = new char[20]{0};
+    strcpy(ar->type, "[Ljava/lang/String;");
+    uint8_t ignore = 2 + ((runtime.step || runtime.verbose || runtime.watch) ? 1 : 0);
+    ar->length = argc - ignore;
+    ar->bytes = new uint8_t[ar->length >= 1 ? ar->length * ar->size : 1]{0};
+    for (int i = 0; i < argc - ignore; i++)
     {
-        runtime.instances.push_back((uint8_t *)argv[i]);
-        uint32_t value = runtime.instances.size() - 1;
-        ar->bytes[(i - 2) * ar->size] = value >> 24;
-        ar->bytes[(i - 2) * ar->size + 1] = value >> 16;
-        ar->bytes[(i - 2) * ar->size + 2] = value >> 8;
-        ar->bytes[(i - 2) * ar->size + 3] = value;
+        uint32_t value = runtime.instances.size();
+
+        array_t *str = new array_t{0};
+        str->type = new char[17]{0};
+        strcpy(str->type, "java/lang/String");
+        str->size = 1;
+        str->length = strlen(argv[i + ignore]) + 1;
+        str->bytes = new uint8_t[str->length]{0};
+        strcpy((char *)str->bytes, argv[i + ignore]);
+
+        runtime.instances.push_back((uint8_t *)str);
+        ar->bytes[i * ar->size] = value >> 24;
+        ar->bytes[i * ar->size + 1] = value >> 16;
+        ar->bytes[i * ar->size + 2] = value >> 8;
+        ar->bytes[i * ar->size + 3] = value;
     }
+    runtime.stack_frames.top()->local_variables[0] = runtime.instances.size();
     runtime.instances.push_back((uint8_t *)ar);
-    runtime.stack_frames.top()->local_variables[0] = runtime.instances.size() - 1;
 
     ExecModule::clinit_loaded_classes(runtime, class_info); // Adiciona metodos <clinit> da super classe mais alta na hierarquia ate a classe atual.
 
@@ -202,13 +227,13 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
         runtime.stack_frames.pop();
     }
     
-    for(uint8_t *i : runtime.instances)
+    for(uint8_t *inst : runtime.instances)
     {
-        if(i == nullptr)
+        if(inst == nullptr)
             continue;
-        if(((instance_t*)i)->bytes != nullptr)
-            delete[] ((instance_t*)i)->bytes;
-        delete[] i;
+        if(((instance_t*)inst)->bytes != nullptr)
+            delete[] ((instance_t*)inst)->bytes;
+        delete[] inst;
     }
 
     for(auto it = runtime.classMap.begin(); it != runtime.classMap.end();it++)
