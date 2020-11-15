@@ -28,6 +28,10 @@ public:
     std::vector<uint8_t *> instances;
     std::map<std::string, ClassInfo *> classMap;
 
+    std::string exceptionName;
+    std::string exceptionMethod;
+    uint32_t exceptionPc;
+
     bool verbose, step, watch;
     uint32_t watchPc;
 
@@ -39,7 +43,7 @@ public:
     Runtime(Runtime const&) = delete;
     void operator=(Runtime const&) = delete;
 private:
-    Runtime() : verbose(false), step(false), watch(false)
+    Runtime() : verbose(false), step(false), watch(false), exceptionPc(-1)
     {
         instances.push_back(0); // NULL reference.
     };

@@ -26,7 +26,13 @@ void ExecModule::exec_jvm(Runtime &runtime)
         if(runtime.watch && frame->pc == runtime.watchPc)
         {
             mostra(frame);
-            getchar();
+            printf("Digite 'a' e enter para resumir mostrando passo a passo\n");
+            if(getchar() == 'a')
+            {
+                runtime.verbose = true;
+                runtime.step = true;
+                getchar(); // Se tiver mais do que "a\n" no buffer nao vai ser o suficiente, mas nao importa.
+            }
         }
         else
         {
@@ -42,7 +48,10 @@ void ExecModule::exec_jvm(Runtime &runtime)
         }
         catch (int e)
         {
+            uint32_t size = runtime.stack_frames.size();
             exception_jvm(runtime);
+            if(size != runtime.stack_frames.size())
+                continue;
         }
 
         if (!frame->exception)
@@ -97,7 +106,6 @@ ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
     return it->second;
 }
 
-//TODO fazer a classe Object ser carregavel, nao faco ideia de como fazer isso ainda
 // Le e aloca memoria pras variaveis estaticas, deixa preparadas pra rodar clinit, se houver.
 ClassInfo *ExecModule::read_load_class(Runtime &runtime, const char *fileName)
 {
@@ -183,7 +191,7 @@ void ExecModule::initialize_jvm(const char *file_name, int argc, char *argv[])
     if (method_main.access_flags != 0)
     {
         runtime.stack_frames.push(new Frame(class_info, method_main)); // Adiciona o metodo main como primeiro frame
-        // so vai ser executado depois de todos os metodos <clinit> necessarios serem executados.
+        // so vai ser executado depois dos metodos <clinit> necessarios serem executados.
     }
     else
     {

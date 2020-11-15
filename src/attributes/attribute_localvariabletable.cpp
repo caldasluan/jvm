@@ -15,7 +15,6 @@ void AttributeLocalVariableTable::fillAttribute(FILE *file, ClassFile* classFile
   }
 }
 
-// TODO test this
 void AttributeLocalVariableTable::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);

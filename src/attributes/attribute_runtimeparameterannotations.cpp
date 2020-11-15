@@ -18,7 +18,6 @@ void AttributedRuntimeParameterAnnotations::fillAttribute(FILE *file, ClassFile*
   }
 }
 
-// TODO test this (this one really needs testing)
 void AttributedRuntimeParameterAnnotations::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);

@@ -60,13 +60,13 @@ std::string ClassFile::get_string_constant_complete(uint16_t index)
     case CpTagConst::CONSTANT_InterfaceMethodref:
     case CpTagConst::CONSTANT_Methodref:
     case CpTagConst::CONSTANT_Fieldref:
-        return get_string_constant_pool(cpInfo.get_class_index(), 0) + "." + get_string_constant_pool(cpInfo.get_name_and_type_index(), 0) + " " + get_string_constant_pool(cpInfo.get_name_and_type_index(), 1);
+        return get_string_constant_pool(cpInfo.get_class_index(), 0) + "." + get_string_constant_pool(cpInfo.get_name_and_type_index(), 0) + ":" + get_string_constant_pool(cpInfo.get_name_and_type_index(), 1);
     case CpTagConst::CONSTANT_NameAndType:
         return get_string_constant_pool(cpInfo.get_name_index(), 0) + " : " + get_string_constant_pool(cpInfo.get_descriptor_index(), 0);
     case CpTagConst::CONSTANT_MethodHandle:
-        return cpInfo.info[0] + " " + get_string_constant_complete((cpInfo.info[1] << 8) | cpInfo.info[2]);
+        return std::to_string(cpInfo.info[0]) + " " + get_string_constant_complete(cpInfo.get_ref_index());
     case CpTagConst::CONSTANT_MethodType:
-        return get_string_constant_pool(cpInfo.get_name_index(), 0);
+        return get_string_constant_pool(cpInfo.get_ref_index(), 0) + "." + get_string_constant_pool(cpInfo.get_ref_index(), 1) + ":" + get_string_constant_pool(cpInfo.get_ref_index(), 2);
     case CpTagConst::CONSTANT_InvokeDynamic:
         return std::to_string(cpInfo.get_name_index()) + " " + get_string_constant_complete(cpInfo.get_name_and_type_index());
     }

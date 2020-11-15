@@ -15,6 +15,7 @@ public class ldc {
 
   public static void main(String[] args)
   {
+    //Nao funciona
     System.out.println(true);
     MyInterface met = ldc::a;
     System.out.println(met.metodo(3));

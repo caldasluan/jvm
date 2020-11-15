@@ -11,7 +11,6 @@ void AttributeRuntimeAnnotations::fillAttribute(FILE *file, ClassFile* classFile
   }
 }
 
-// TODO test this
 void AttributeRuntimeAnnotations::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);

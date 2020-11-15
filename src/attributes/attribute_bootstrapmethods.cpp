@@ -18,7 +18,6 @@ void AttributeBootstrapMethods::fillAttribute(FILE *file, ClassFile* classFile)
   }
 }
 
-// TODO: test this
 void AttributeBootstrapMethods::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);
@@ -29,12 +28,10 @@ void AttributeBootstrapMethods::showAttribute(int offset, int index, ClassFile& 
   uint16_t aux1;
   for (int i = 0; i < num_bootstrap_methods; i++)
   {
-    printf("%*s%-4d Bootstrap method ref: %d < %s : %s >\n%*s%d argument%s\n",
+    printf("%*s%-4d Bootstrap method ref: %d < %s >\n%*s%d argument%s\n",
            offset * OFFSET_AMMOUNT, "", i,
            bootstrap_methods[i].bootstrap_method_ref,
-           classFile.get_string_constant_pool(bootstrap_methods[i].bootstrap_method_ref, 0).c_str(),
-           (classFile.get_string_constant_pool(bootstrap_methods[i].bootstrap_method_ref)
-           + "." + classFile.get_string_constant_pool(bootstrap_methods[i].bootstrap_method_ref, 1)).c_str(),
+           classFile.get_string_constant_complete(bootstrap_methods[i].bootstrap_method_ref).c_str(),
            offset * OFFSET_AMMOUNT + OFFSET_AMMOUNT, "", bootstrap_methods[i].num_bootstrap_arguments,
            bootstrap_methods[i].num_bootstrap_arguments == 1 ? "" : "s");
     for (int j = 0; j < bootstrap_methods[i].num_bootstrap_arguments; j++)

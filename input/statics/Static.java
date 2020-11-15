@@ -2,7 +2,7 @@ package input.statics;
 
 // compile with "javac -source 8 -target 8 input/statics/Static.java"
 
-public class Static extends StaticPai implements StaticInt, StaticInt2 {
+public class Static extends StaticPai implements StaticInt {
 
   public static void s1()
   {

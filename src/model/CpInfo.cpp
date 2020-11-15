@@ -7,6 +7,10 @@ uint16_t CpInfo::get_name_index() {
     return (this->info[0] << 8) + this->info[1];
 }
 
+uint16_t CpInfo::get_ref_index() {
+    return (this->info[1]<<8) | this->info[2];
+}
+
 uint16_t CpInfo::get_descriptor_index() {
     return (this->info[2] << 8) + this->info[3];
 }

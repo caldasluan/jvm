@@ -2079,7 +2079,6 @@ void c_return(Frame &frame)
     runtime.stack_frames.pop();
 }
 
-// TODO interromper a jvm e imprimir o erro.
 void getstatic(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
@@ -2201,7 +2200,6 @@ void putstatic(Frame &frame)
         frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
 }
 
-// TODO testar
 void getfield(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
@@ -2262,7 +2260,6 @@ void getfield(Frame &frame)
         frame.pc -= 3; // retorna pra essa instrucao apos rodar os metodos <clinit>
 }
 
-// TODO testar
 void putfield(Frame &frame)
 {
     uint16_t field_ref_index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
@@ -2335,7 +2332,6 @@ void putfield(Frame &frame)
 }
 
 // TODO implementar regras de acesso
-// TODO "Dispatch based on class" significa que temos que salvar a classe exata instanciada pra saber qual usar aqui.
 void invokevirtual(Frame &frame)
 {
     uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
@@ -2753,7 +2749,7 @@ void anewarray(Frame &frame)
         ar->type = new char[class_name.length() + 4];
         strcpy(ar->type, (std::string("[L") + class_name.append(";")).c_str());
         ar->length = count;
-        ar->bytes = new uint8_t[count * ar->size]{0};
+        ar->bytes = new uint8_t[(count > 0 ? count * ar->size : 1)]{0};
 
         frame.operand_stack.push(runtime.instances.size());
         runtime.instances.push_back((uint8_t *)ar);

@@ -5,9 +5,15 @@ package input.cast;
 import input.heranca.*;
 
 public class checkcast {
+
+  public static void daErro()
+  {
+    int a = 1/0;
+  }
   
   public static void main(String[] args) {
-    Classe1 c1 = new Classe1();
+    Classe1 manokkk = new Classe1();
+    Object c1 = manokkk;
     System.out.print("Classe1 ");
     Classe1 c = (Classe1)c1;
     System.out.print("Classe2 ");
@@ -27,6 +33,18 @@ public class checkcast {
     System.out.print("Object ");
     Object o = (Object)c1;
     System.out.print("Instanceof ");
+    try{
+      Object o2 = ((Instanceof)(Object)c1);
+    } catch(Exception e) {
+      System.out.println("Exception");
+    }
+
+    try{
+      daErro();
+    } catch(Exception e) {
+      System.out.println("Outra exception");
+    }
+    
     Object o2 = ((Instanceof)(Object)c1);
   }
   public class Teste{}

@@ -47,7 +47,6 @@ void AttributeCode::showAttribute(int offset, int index, ClassFile& classFile)
 
   showCode(offset, classFile);
 
-  // TODO: test this
   showExceptions(offset, classFile);
 
   show_attributes(offset, attributes, classFile);

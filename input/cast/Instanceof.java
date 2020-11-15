@@ -45,5 +45,6 @@ public class Instanceof  {
     System.out.println(string_matriz instanceof String[][][]);
 
     int matriz[][] = new int[3][3];
+    matriz[0][0] = 1;
   }
 }

@@ -5,7 +5,7 @@ package input.clinit;
 public class clinit1 {
   public static void main(String[] args) {
     System.out.println("Rodando");
-    clinit2 c = new clinit2();
-    System.out.println(c.a);
+    
+    System.out.println(clinit2.a);
   }
 }

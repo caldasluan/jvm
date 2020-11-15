@@ -6,7 +6,6 @@ void AttributeEnclosingMethod::fillAttribute(FILE *file, ClassFile* classFile)
   method_index = u2Read(file);
 }
 
-// TODO: test this
 void AttributeEnclosingMethod::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);

@@ -1,7 +1,6 @@
 #include "ClassInfo.h"
 #include <cstring>
 
-// TODO incluir fields de interfaces, todos os fields de interfaces sao estaticos
 ClassInfo *load_class(ClassFile *class_file, ClassInfo *super_class_info, std::map<std::string, ClassInfo *> classMap)
 {
   ClassInfo *class_info = new ClassInfo(class_file);
@@ -47,28 +46,9 @@ ClassInfo *load_class(ClassFile *class_file, ClassInfo *super_class_info, std::m
     }
   }
 
-  // Cria um vetor onde serao armazenadas todos os campos estaticos dessa classe, caso haja algum.
+  // Cria um vetor onde serao armazenadas os campos estaticos dessa classe, caso haja algum.
   if(class_info->staticBytesAmmount != 0)
     class_info->staticBytes = new uint8_t[class_info->staticBytesAmmount]{0};
-
-
-  // Carrega variaveis estaticas finais, talvez nao seja necessario
-  /* if(super_class_info != nullptr)
-    memcpy(class_info->staticVariablesBytes, super_class_info->staticVariablesBytes, super_class_info->staticVariablesBytesAmmount);
-  
-  for(uint16_t interface_index : class_file->interfaces)
-  {
-    ClassFile *interface_file = classMap[class_file->get_string_constant_pool(interface_index)]->class_file;
-    for(FieldInfo field_info : interface_file->fields)
-    {
-      if(class_info->staticIndexByName.find(interface_file->get_string_constant_pool(field_info.name_index)) == class_info->staticIndexByName.end())
-      {
-        field_size = FieldInfo::field_size_bytes(interface_file->get_string_constant_pool(field_info.descriptor_index));
-        class_info->staticIndexByName[interface_file->get_string_constant_pool(field_info.name_index)] = class_info->staticVariablesBytesAmmount;
-        class_info->staticVariablesBytesAmmount += field_size;
-      }
-    }
-  } */
 
   return class_info;
 }

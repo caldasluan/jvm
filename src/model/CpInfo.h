@@ -10,6 +10,7 @@ class CpInfo {
         std::vector<uint8_t> info;
 
         uint16_t get_name_index();
+        uint16_t get_ref_index();
         uint16_t get_descriptor_index();
         uint16_t get_class_index();
         uint16_t get_name_and_type_index();

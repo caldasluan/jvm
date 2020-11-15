@@ -128,7 +128,13 @@ void show_constant_pool(ClassFile& classFile) {
                 /*printf("[%d] (large numeric continued)\n\n", i);*/
                 break;
             case CpTagConst::CONSTANT_InvokeDynamic:
-                printf("\t#%4d = InvokeDynamic \t\t\t #%d #%d \t\t // %s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
+                printf("\t#%4d = InvokeDynamic \t\t\t i=%d #%d \t\t // %s:%s\n", i, it->get_class_index(), it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 0).c_str(), classFile.get_string_constant_pool(i, 1).c_str());
+                /*printf("[%d] CONSTANT_Methodref_info\n", i);
+                printf("\t- Class name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_class_index(), classFile.get_string_constant_pool(i, 0).c_str());
+                printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());*/
+                break;
+            case CpTagConst::CONSTANT_MethodHandle:
+                printf("\t#%4d = MethodHandle \t\t\t t=%d #%d \t\t // %s\n", i, it->info[0], it->get_ref_index(), classFile.get_string_constant_complete(i).c_str());
                 /*printf("[%d] CONSTANT_Methodref_info\n", i);
                 printf("\t- Class name: \t\t\tcp_info #%d  \t\t<%s>\n", it->get_class_index(), classFile.get_string_constant_pool(i, 0).c_str());
                 printf("\t- Name and type: \t\tcp_info #%d  \t\t<%s:%s>\n\n", it->get_name_and_type_index(), classFile.get_string_constant_pool(i, 1).c_str(), classFile.get_string_constant_pool(i, 2).c_str());*/

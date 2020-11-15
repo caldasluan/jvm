@@ -30,7 +30,6 @@ void printAccessFlags(uint32_t accessFlags, const std::map<int, std::string> *ac
   printf(")\n");
 }
 
-// TODO: test this
 void AttributeInnerClasses::showAttribute(int offset, int index, ClassFile& classFile)
 {
   AttributeInfo::showAttribute(offset, index, classFile);
