@@ -9,25 +9,25 @@ public class checkcast {
   public static void main(String[] args) {
     Classe1 c1 = new Classe1();
     System.out.print("Classe1 ");
-    System.out.println(((Classe1)c1).toString());
+    Classe1 c = (Classe1)c1;
     System.out.print("Classe2 ");
-    System.out.println(((Classe2)c1).toString());
+    Classe2 c2 =(Classe2)c1;
     System.out.print("Classe3 ");
-    System.out.println(((Classe3)c1).toString());
+    Classe3 c3 =(Classe3)c1;
     System.out.print("Inter1 ");
-    System.out.println(((Inter1)c1).toString());
+    Inter1 i1 = (Inter1)c1;
     System.out.print("Inter2 ");
-    System.out.println(((Inter2)c1).toString());
+    Inter2 i2 = (Inter2)c1;
     System.out.print("Inter3 ");
-    System.out.println(((Inter3)c1).toString());
+    Inter3 i3 = (Inter3)c1;
     System.out.print("Inter4 ");
-    System.out.println(((Inter4)c1).toString());
+    Inter4 i4 = (Inter4)c1;
     System.out.print("Inter5 ");
-    System.out.println(((Inter5)c1).toString());
+    Inter5 i5 = (Inter5)c1;
     System.out.print("Object ");
-    System.out.println(((Object)c1).toString());
+    Object o = (Object)c1;
     System.out.print("Instanceof ");
-    System.out.println(((Instanceof)(Object)c1).toString());
+    Object o2 = ((Instanceof)(Object)c1);
   }
   public class Teste{}
 }

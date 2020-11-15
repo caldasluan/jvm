@@ -84,7 +84,10 @@ ClassInfo *ExecModule::prepare_class(Runtime &runtime, std::string fileName)
         uint32_t size = runtime.stack_frames.size();
         ClassInfo *class_info = read_load_class(runtime, (fileName + ".class").c_str());
         if(class_info == nullptr)
+        {
+            runtime.stack_frames.top()->exception = true; // Classe nao encontrada.
             return nullptr;
+        }
 
         clinit_loaded_classes(runtime, class_info);
         if (size == runtime.stack_frames.size()) // Caso nao tenha sido adicionado nenhum frame com metodo <clinit>
