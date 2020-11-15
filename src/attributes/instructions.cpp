@@ -2294,6 +2294,8 @@ void invokevirtual(Frame &frame)
 
 void invokespecial(Frame &frame)
 {
+    Runtime &runtime = Runtime::getInstance();
+
     uint16_t index = (frame.code->code[++frame.pc] << 8) | frame.code->code[++frame.pc];
 
     std::string class_name = frame.class_info->class_file->get_string_constant_pool(index);
@@ -2309,7 +2311,39 @@ void invokespecial(Frame &frame)
         return;
     }
 
-    Runtime &runtime = Runtime::getInstance();
+    if(class_name.compare("java/lang/String") == 0 && method_name.compare("<init>") == 0)
+    {
+        if(method_desc.compare("(Ljava/lang/String;)V") == 0)
+        {
+            array_t *original_ar = (array_t *)runtime.instances[get_int(frame)];
+            array_t *new_ar = (array_t *)runtime.instances[get_int(frame)];
+
+            delete[] new_ar->bytes;
+            new_ar->bytes = new uint8_t[original_ar->length + 1]{0};
+
+            strcpy((char*)new_ar->bytes, (char*)original_ar->bytes);
+        }
+        else if(method_desc.compare("([C)V") == 0)
+        {
+            array_t *original_ar = (array_t *)runtime.instances[get_int(frame)];
+            array_t *new_ar = (array_t *)runtime.instances[get_int(frame)];
+
+            delete[] new_ar->bytes;
+            new_ar->bytes = new uint8_t[original_ar->length + 1]{0};
+
+            // Necessario pos a array nao precisa terminar com '\0'
+            for(int i = 0; i < original_ar->length; i++)
+            {
+                new_ar->bytes[i] = original_ar->bytes[i];
+            }
+        }
+        else
+        {
+            get_int(frame);
+        }
+
+        return;
+    }
 
     ClassInfo *class_info = ExecModule::prepare_class(runtime, class_name);
 
@@ -2456,6 +2490,21 @@ void c_new(Frame &frame)
 
     Runtime &runtime = Runtime::getInstance();
 
+    if(class_name.compare("java/lang/String") == 0)
+    {
+        array_t *ar = new array_t;
+
+        ar->type = new char[17]{0};
+        strcpy(ar->type, "java/lang/String");
+        ar->bytes = new uint8_t[1]{0};
+        ar->size = 1;
+        ar->length = 1;
+
+        frame.operand_stack.push(runtime.instances.size());
+        runtime.instances.push_back((uint8_t *)ar);
+        return;
+    }
+
     if (class_name.compare("java/lang/StringBuilder") == 0 || class_name.compare("java/util/Scanner") == 0 || class_name.compare("java/lang/Exception") == 0)
     {
         frame.operand_stack.push(0); // Objetos de classes do proprio java devem ser ignorados?
@@ -2597,8 +2646,8 @@ bool getCast(Runtime &runtime, std::string obj_type, std::string resolved_type)
         if(resolved_type[0] == '[')
             return false;
         
-        if(obj_type.compare("java/lang/String") == 0 && resolved_type.compare("java/lang/String") == 0)
-            return true;
+        if(obj_type.compare("java/lang/String") == 0)
+            return resolved_type.compare("java/lang/String") == 0;
 
         
         ClassInfo *class_info = ExecModule::prepare_class(runtime, obj_type), *cur_class_info = class_info;

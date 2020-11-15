@@ -10,6 +10,24 @@ public class stringTest {
 
     for(int i = 0; i < args.length; i++)
       System.out.println(args[i]);
+
+    String a = "roi ";
+    String b = new String("leticia ");
+    char data[] = {'n', 'e', 'h'};
+    String c = new String(data);
+
+    System.out.print(a);
+    System.out.print(b);
+    System.out.println(c);
+    
+    c = "neh?";
+
+    String d = new String();
+
+    System.out.print(a);
+    System.out.print(b);
+    System.out.print(c);
+    System.out.println(d);
   }
   
 }
