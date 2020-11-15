@@ -34,6 +34,8 @@ std::string ClassFile::get_string_constant_pool(uint16_t index, uint8_t type) {
             return std::to_string(cpInfo.get_long());
         case CpTagConst::CONSTANT_Double:
             return std::to_string(cpInfo.get_double());
+        case CpTagConst::CONSTANT_InvokeDynamic:
+            return this->get_string_constant_pool(cpInfo.get_name_and_type_index(), type);
         default:
             return "";
     }
@@ -66,7 +68,7 @@ std::string ClassFile::get_string_constant_complete(uint16_t index)
     case CpTagConst::CONSTANT_MethodType:
         return get_string_constant_pool(cpInfo.get_name_index(), 0);
     case CpTagConst::CONSTANT_InvokeDynamic:
-        return cpInfo.get_name_index() + " " + get_string_constant_complete(cpInfo.get_name_and_type_index());
+        return std::to_string(cpInfo.get_name_index()) + " " + get_string_constant_complete(cpInfo.get_name_and_type_index());
     }
     return "What?" + index;
 }

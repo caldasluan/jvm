@@ -28,7 +28,7 @@ int get_int(Frame &frame);
 long long get_long(Frame &frame);
 float get_float(Frame &frame);
 double get_double(Frame &frame);
-std::pair<ClassInfo*, MethodInfo*> getMethod(ClassInfo *class_file, std::string method_name, std::string method_desc);
+std::pair<ClassInfo*, MethodInfo*> getMethod(ClassInfo *class_file, std::string method_name, std::string method_desc, bool staticMethod);
 void getArgs(std::vector<uint32_t> &args, std::string &method_desc, Frame &frame);
 
 void nop(Frame &);
